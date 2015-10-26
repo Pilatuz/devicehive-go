@@ -1,0 +1,6 @@
+cover.out
+*.test
+
+# executable from examples
+/examples/simple_dev/simple_dev
+
