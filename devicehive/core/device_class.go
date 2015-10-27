@@ -29,6 +29,17 @@ type DeviceClass struct {
 	Equipment []*Equipment `json:"equipment,omitempty"`
 }
 
+// NewDeviceClass creates a new device class.
+// No user data and no equipment by default.
+func NewDeviceClass(name, version string) *DeviceClass {
+	return &DeviceClass{Name: name, Version: version}
+}
+
+// AddEquipment() adds a new equipment to the device class
+func (deviceClass *DeviceClass) AddEquipment(equipment ...*Equipment) {
+	deviceClass.Equipment = append(deviceClass.Equipment, equipment...)
+}
+
 // Get DeviceClass string representation
 func (deviceClass DeviceClass) String() string {
 	body := ""
@@ -166,9 +177,4 @@ func (deviceClass *DeviceClass) AssignJSON(rawData interface{}) error {
 	}
 
 	return nil // OK
-}
-
-// AddEquipment() adds a new equipment
-func (deviceClass *DeviceClass) AddEquipment(equipment *Equipment) {
-	deviceClass.Equipment = append(deviceClass.Equipment, equipment)
 }

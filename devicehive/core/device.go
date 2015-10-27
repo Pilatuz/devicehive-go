@@ -31,6 +31,20 @@ type Device struct {
 	DeviceClass *DeviceClass `json:"deviceClass,omitempty"`
 }
 
+// NewDevice creates a new device without network.
+// No user data by default.
+func NewDevice(id, name string, class *DeviceClass) *Device {
+	return &Device{Id: id, Name: name, Status: "Online",
+		DeviceClass: class, Network: nil}
+}
+
+// NewDeviceWithNetwork creates a new device with network initialized.
+// No user data by default.
+func NewDeviceWithNetwork(id, name string, class *DeviceClass, network *Network) *Device {
+	return &Device{Id: id, Name: name, Status: "Online",
+		DeviceClass: class, Network: network}
+}
+
 // Get Device string representation
 func (device Device) String() string {
 	body := ""

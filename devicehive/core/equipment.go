@@ -21,6 +21,12 @@ type Equipment struct {
 	Data interface{} `json:"data,omitempty"`
 }
 
+// NewEquipment creates a new equipment.
+// No user data by default.
+func NewEquipment(name, code, type_ string) *Equipment {
+	return &Equipment{Name: name, Code: code, Type: type_}
+}
+
 // Get Equipment string representation
 func (equipment Equipment) String() string {
 	body := ""

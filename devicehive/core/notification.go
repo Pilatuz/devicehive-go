@@ -17,6 +17,11 @@ type Notification struct {
 	Parameters interface{} `json:"parameters,omitempty"`
 }
 
+// NewNotification creates a new notification.
+func NewNotification(name string, parameters interface{}) *Notification {
+	return &Notification{Name: name, Parameters: parameters}
+}
+
 // Get Notification string representation
 func (notification Notification) String() string {
 	body := ""

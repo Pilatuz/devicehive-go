@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-
 // Abstract DeviceHive /device API.
 type Service interface {
 	GetServerInfo(timeout time.Duration) (info *core.ServerInfo, err error)
@@ -59,33 +58,31 @@ func NewService(baseUrl, accessKey string) (service Service, err error) {
 // NewDevice creates a new device without network.
 // No user data by default.
 func NewDevice(id, name string, class *core.DeviceClass) *core.Device {
-	return &core.Device{Id: id, Name: name, Status: "Online",
-		DeviceClass: class, Network: nil}
+	return core.NewDevice(id, name, class)
 }
 
 // NewDeviceWithNetwork creates a new device with network initialized.
 // No user data by default.
 func NewDeviceWithNetwork(id, name string, class *core.DeviceClass, network *core.Network) *core.Device {
-	return &core.Device{Id: id, Name: name, Status: "Online",
-		DeviceClass: class, Network: network}
+	return core.NewDeviceWithNetwork(id, name, class, network)
 }
 
 // NewDeviceClass creates a new device class.
 // No user data and no equipment by default.
 func NewDeviceClass(name, version string) *core.DeviceClass {
-	return &core.DeviceClass{Name: name, Version: version}
+	return core.NewDeviceClass(name, version)
 }
 
 // NewEquipment creates a new equipment.
 // No user data by default.
 func NewEquipment(name, code, type_ string) *core.Equipment {
-	return &core.Equipment{Name: name, Code: code, Type: type_}
+	return core.NewEquipment(name, code, type_)
 }
 
 // NewNetwork creates a new network.
 // Network Description is empty.
 func NewNetwork(name, key string) *core.Network {
-	return &core.Network{Name: name, Key: key}
+	return core.NewNetwork(name, key)
 }
 
 // NewCommand creates a new command.
@@ -96,7 +93,7 @@ func NewCommand(name string, parameters interface{}) *core.Command {
 
 // NewNotification creates a new notification.
 func NewNotification(name string, parameters interface{}) *core.Notification {
-	return &core.Notification{Name: name, Parameters: parameters}
+	return core.NewNotification(name, parameters)
 }
 
 // SetLogLevel changes the global logging level:

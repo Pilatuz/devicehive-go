@@ -19,6 +19,12 @@ type Network struct {
 	Description string `json:"description,omitempty"`
 }
 
+// NewNetwork creates a new network.
+// Network Description is empty.
+func NewNetwork(name, key string) *Network {
+	return &Network{Name: name, Key: key}
+}
+
 // Get Network string representation
 func (network Network) String() string {
 	body := ""
