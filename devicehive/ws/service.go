@@ -98,9 +98,12 @@ func NewService(baseUrl, accessKey string) (service *Service, err error) {
 
 	// connect to /device endpoint
 	ws_url := fmt.Sprintf("%s/device", service.baseUrl)
-	origin := "http://localhost/"
-	service.conn, _, err = websocket.DefaultDialer.Dial(ws_url,
-		http.Header{"Origin": []string{origin}})
+	headers := http.Header{}
+	headers.Add("Origin", "http://localhost/")
+	if len(service.accessKey) != 0 {
+		headers.Add("Authorization", "Bearer "+service.accessKey)
+	}
+	service.conn, _, err = websocket.DefaultDialer.Dial(ws_url, headers)
 	if err != nil {
 		log.Warnf("WS: failed to dial (error: %s)", err)
 		return
@@ -180,13 +183,17 @@ func (service *Service) doRX() {
 			if task != nil {
 				task.dataRecved = msg
 				task.done <- task
+				continue
 			}
 		}
 
 		if v, ok := msg["action"]; ok {
 			action := safeString(v)
 			service.handleAction(action, msg)
+			continue
 		}
+
+		log.Warnf("WS: unexpected message: %s, ignored", string(body))
 	}
 }
 

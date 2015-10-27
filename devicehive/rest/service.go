@@ -127,11 +127,13 @@ func (service *Service) SubscribeCommands(device *core.Device, timestamp string,
 	go func(deviceId string) {
 		log.Debugf("REST: start command polling %q", deviceId)
 		for {
-			cmds, err := service.PollCommands(device, timestamp, "", "60", time.Second)
+			names := ""
+			wait := "30"
+			cmds, err := service.PollCommands(device, timestamp, names, wait, 60*time.Second)
 			if err != nil {
 				log.Warnf("REST: failed to poll commands (error: %s)", err)
 			}
-			if listener, ok := service.commandListeners[deviceId];  ok {
+			if listener, ok := service.commandListeners[deviceId]; ok {
 				for _, cmd := range cmds {
 					log.Infof("REST: got command %s received", cmd)
 					timestamp = cmd.Timestamp

@@ -25,9 +25,9 @@ func (service *Service) preparePollCommand(device *core.Device, timestamp, names
 	}
 	var url string
 	if len(query) != 0 {
-		url = fmt.Sprintf("%s/device/%s/command?%s", service.baseUrl, device.Id, query.Encode())
+		url = fmt.Sprintf("%s/device/%s/command/poll?%s", service.baseUrl, device.Id, query.Encode())
 	} else {
-		url = fmt.Sprintf("%s/device/%s/command", service.baseUrl, device.Id)
+		url = fmt.Sprintf("%s/device/%s/command/poll", service.baseUrl, device.Id)
 	}
 
 	task.request, err = http.NewRequest("GET", url, nil)
