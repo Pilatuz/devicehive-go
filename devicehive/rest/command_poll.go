@@ -23,11 +23,9 @@ func (service *Service) preparePollCommand(device *core.Device, timestamp, names
 	if len(waitTimeout) != 0 {
 		query.Set("waitTimeout", waitTimeout)
 	}
-	var url string
+	url := fmt.Sprintf("%s/device/%s/command/poll", service.baseUrl, device.Id)
 	if len(query) != 0 {
-		url = fmt.Sprintf("%s/device/%s/command/poll?%s", service.baseUrl, device.Id, query.Encode())
-	} else {
-		url = fmt.Sprintf("%s/device/%s/command/poll", service.baseUrl, device.Id)
+		url += "?" + query.Encode()
 	}
 
 	task.request, err = http.NewRequest("GET", url, nil)

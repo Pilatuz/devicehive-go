@@ -4,9 +4,9 @@ import (
 	"github.com/devicehive/devicehive-go/devicehive"
 	"github.com/devicehive/devicehive-go/devicehive/log"
 	"github.com/devicehive/devicehive-go/devicehive/rest"
-	"os"
-	"os/signal"
 	"time"
+	"os/signal"
+	"os"
 )
 
 func main() {
@@ -33,6 +33,16 @@ func main() {
 	}
 	log.Alwaysf("server info: %s", info)
 
+	devices, err := s.GetDeviceList(0, 0, waitTimeout)
+	if err != nil {
+		log.Fatalf("Failed to get device list (error: %s)", err)
+	}
+	for _, d := range devices {
+		log.Alwaysf("device %s", d)
+	}
+	log.Alwaysf("done %d", len(devices))
+	return
+
 	device := devicehive.NewDevice(deviceId, "test-name",
 		devicehive.NewDeviceClass("go-dev-class", "1.2.3"))
 	device.DeviceClass.AddEquipment(devicehive.NewEquipment("n1", "c1", "t1"))
@@ -40,20 +50,20 @@ func main() {
 	//device.Network = devicehive.NewNetwork("dev-net", "net-key")
 	device.Key = deviceKey
 
-	//	err = s.Authenticate(device, waitTimeout)
-	//	if err != nil {
-	//		log.Fatalf("Failed to authenticate (error: %s)", err)
-	//	}
+//	err = s.Authenticate(device, waitTimeout)
+//	if err != nil {
+//		log.Fatalf("Failed to authenticate (error: %s)", err)
+//	}
 
 	err = s.RegisterDevice(device, waitTimeout)
 	if err != nil {
 		log.Fatalf("Failed to register device (error: %s)", err)
 	}
 
-	//	*device, err = s.GetDevice(deviceId, deviceKey, waitTimeout)
-	//	if err != nil {
-	//		log.Fatalf("Failed to get device (error: %s)", err)
-	//	}
+//	*device, err = s.GetDevice(deviceId, deviceKey, waitTimeout)
+//	if err != nil {
+//		log.Fatalf("Failed to get device (error: %s)", err)
+//	}
 	log.Alwaysf("device: %s", device)
 
 	notification := devicehive.NewNotification("hello", 12345)
@@ -69,19 +79,19 @@ func main() {
 	}
 	for {
 		select {
-		case command := <-cmd_listener.C:
-			log.Alwaysf("command received: %s", command)
-			command.Status = "Success"
-			command.Result = "No"
-			err = s.UpdateCommand(device, command, waitTimeout)
-			if err != nil {
-				log.Fatalf("failed to update command status (error: %s)", err)
-			}
-		case <-time.After(time.Second):
-			log.Alwaysf(".")
-		case <-sig_ch:
-			log.Alwaysf("Exiting...")
-			return
+			case command := <- cmd_listener.C:
+				log.Alwaysf("command received: %s", command)
+				command.Status = "Success"
+				command.Result = "No"
+				err = s.UpdateCommand(device, command, waitTimeout)
+				if err != nil {
+					log.Fatalf("failed to update command status (error: %s)", err)
+				}
+			case <- time.After(time.Second):
+				log.Alwaysf(".")
+			case <- sig_ch:
+				log.Alwaysf("Exiting...")
+				return
 		}
 	}
 	return
