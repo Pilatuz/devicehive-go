@@ -93,6 +93,7 @@ func NewService(baseUrl, accessKey string) (service *Service, err error) {
 	service.baseUrl, err = url.Parse(baseUrl)
 	if err != nil {
 		log.Warnf("WS: failed to parse URL (error: %s)", err)
+		service = nil
 		return
 	}
 
@@ -106,6 +107,7 @@ func NewService(baseUrl, accessKey string) (service *Service, err error) {
 	service.conn, _, err = websocket.DefaultDialer.Dial(ws_url, headers)
 	if err != nil {
 		log.Warnf("WS: failed to dial (error: %s)", err)
+		service = nil
 		return
 	}
 
