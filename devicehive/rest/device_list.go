@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Prepare ListDevices task
+// Prepare GetDeviceList task
 func (service *Service) prepareGetDeviceList(take, skip int) (task Task, err error) {
 	// create request
 	query := url.Values{}
@@ -37,7 +37,7 @@ func (service *Service) prepareGetDeviceList(take, skip int) (task Task, err err
 	return
 }
 
-// Process ListDevices task
+// Process GetDeviceList task
 func (service *Service) processGetDeviceList(task Task) (devices []core.Device, err error) {
 	// check task error first
 	if task.err != nil {
@@ -64,7 +64,7 @@ func (service *Service) processGetDeviceList(task Task) (devices []core.Device, 
 	return
 }
 
-// ListDevices() function get the device list.
+// GetDeviceList() function get the device list.
 func (service *Service) GetDeviceList(take, skip int, timeout time.Duration) (devices []core.Device, err error) {
 	log.Tracef("REST: getting device list (take:%d, skip:%d)...", take, skip)
 

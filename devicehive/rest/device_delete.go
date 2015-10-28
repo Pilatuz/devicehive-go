@@ -46,7 +46,7 @@ func (service *Service) processDeleteDevice(task Task) (err error) {
 
 // DeleteDevice() function deletes the device.
 func (service *Service) DeleteDevice(device *core.Device, timeout time.Duration) (err error) {
-	log.Tracef("REST: deleting device...")
+	log.Tracef("REST: deleting device %q...", device.Id)
 
 	task, err := service.prepareDeleteDevice(device)
 	if err != nil {

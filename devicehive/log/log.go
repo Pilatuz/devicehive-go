@@ -14,7 +14,8 @@ import (
 type Level int
 
 const (
-	WARN Level = iota
+	NOLOG Level = iota
+	WARN
 	INFO
 	DEBUG
 	TRACE
@@ -32,6 +33,8 @@ func init() {
 // return "UNKNOWN" for unknown levels
 func (level Level) String() string {
 	switch level {
+	case NOLOG:
+		return "NOLOG"
 	case WARN:
 		return "WARN"
 	case INFO:
@@ -49,6 +52,8 @@ func (level Level) String() string {
 // returns INFO by default
 func parseLevel(name string) Level {
 	switch strings.ToUpper(name) {
+	case "NOLOG":
+		return NOLOG
 	case "WARN":
 		return WARN
 	case "INFO":
