@@ -59,7 +59,7 @@ func (network *Network) AssignJSON(rawData interface{}) error {
 
 	data, ok := rawData.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("Network: %v - unexpected data type")
+		return fmt.Errorf("Network: %v - unexpected data type", rawData)
 	}
 
 	// identifier

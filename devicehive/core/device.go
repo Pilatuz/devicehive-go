@@ -92,7 +92,7 @@ func (device *Device) AssignJSON(rawData interface{}) error {
 
 	data, ok := rawData.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("Device: %v - unexpected data type")
+		return fmt.Errorf("Device: %v - unexpected data type", rawData)
 	}
 
 	// identifier

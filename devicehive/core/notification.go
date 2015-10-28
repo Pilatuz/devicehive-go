@@ -56,7 +56,7 @@ func (notification *Notification) AssignJSON(rawData interface{}) error {
 
 	data, ok := rawData.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("Notification: %v - unexpected data type")
+		return fmt.Errorf("Notification: %v - unexpected data type", rawData)
 	}
 
 	// identifier

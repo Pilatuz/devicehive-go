@@ -27,7 +27,7 @@ type Service struct {
 }
 
 // Get string representation of a service.
-func (service Service) String() string {
+func (service *Service) String() string {
 	return fmt.Sprintf("RestService{baseUrl:%q, accessKey:%q}",
 		service.baseUrl, service.accessKey)
 }

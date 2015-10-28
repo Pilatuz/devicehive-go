@@ -41,7 +41,7 @@ type Service struct {
 }
 
 // Get string representation of a Websocket service.
-func (s Service) String() string {
+func (s *Service) String() string {
 	return fmt.Sprintf("WebsocketService{baseUrl:%q, accessKey:%q}", s.baseUrl, s.accessKey)
 }
 
