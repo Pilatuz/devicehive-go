@@ -160,6 +160,8 @@ func (command *Command) AssignJSON(rawData interface{}) error {
 			command.Lifetime = uint64(v)
 		case uint64:
 			command.Lifetime = v
+		case nil:
+			command.Lifetime = 0
 		default:
 			return fmt.Errorf("Command: %v - unexpected value for lifetime", lt)
 		}
@@ -175,6 +177,8 @@ func (command *Command) AssignJSON(rawData interface{}) error {
 		switch v := s.(type) {
 		case string:
 			command.Status = v
+		case nil:
+			command.Status = ""
 		default:
 			return fmt.Errorf("Command: %v - unexpected value for status", s)
 		}
