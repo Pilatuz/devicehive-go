@@ -41,6 +41,11 @@ func NewCommand(name string, parameters interface{}) *Command {
 	return &Command{Name: name, Parameters: parameters}
 }
 
+// NewCommandResult creates a new command result.
+func NewCommandResult(id uint64, status string, result interface{}) *Command {
+	return &Command{Id: id, Status: status, Result: result}
+}
+
 // NewCommandListener creates a new command listener.
 func NewCommandListener() *CommandListener {
 	ch := make(chan *Command) // TODO: buffered?

@@ -91,6 +91,11 @@ func NewCommand(name string, parameters interface{}) *core.Command {
 	return core.NewCommand(name, parameters)
 }
 
+// NewCommandResult creates a new command result.
+func NewCommandResult(id uint64, status string, result interface{}) *core.Command {
+	return core.NewCommandResult(id, status, result)
+}
+
 // NewNotification creates a new notification.
 func NewNotification(name string, parameters interface{}) *core.Notification {
 	return core.NewNotification(name, parameters)
