@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/devicehive/devicehive-go/devicehive"
 	"github.com/devicehive/devicehive-go/devicehive/log"
-	"github.com/devicehive/devicehive-go/devicehive/rest"
+//	"github.com/devicehive/devicehive-go/devicehive/rest"
 	"time"
 	"os/signal"
 	"os"
@@ -19,9 +19,9 @@ func main() {
 	deviceId := "go-test-device-id123"
 	deviceKey := "go-test-device-key"
 
-	url := "ws://playground.devicehive.com/api/websocket"
-	key := "<access key should be here>"
-	s, err := rest.NewService(url, key)
+	url := "ws://localhost:8080"//"ws://playground.devicehive.com/api/websocket"
+	key := "gQPScZHbvm7oNxKXKT3c32MUfQdezoJ5IS/C4pTyNjo="
+	s, err := devicehive.NewService(url, key)
 	if err != nil {
 		log.Fatalf("Failed to create service (error: %s)", err)
 	}
@@ -33,15 +33,17 @@ func main() {
 	}
 	log.Alwaysf("server info: %s", info)
 
-	devices, err := s.GetDeviceList(0, 0, waitTimeout)
-	if err != nil {
-		log.Fatalf("Failed to get device list (error: %s)", err)
+	if false {
+//		devices, err := s.GetDeviceList(0, 0, waitTimeout)
+//		if err != nil {
+//			log.Fatalf("Failed to get device list (error: %s)", err)
+//		}
+//		for _, d := range devices {
+//			log.Alwaysf("device %s", d)
+//		}
+//		log.Alwaysf("done %d", len(devices))
+//		return
 	}
-	for _, d := range devices {
-		log.Alwaysf("device %s", d)
-	}
-	log.Alwaysf("done %d", len(devices))
-	return
 
 	device := devicehive.NewDevice(deviceId, "test-name",
 		devicehive.NewDeviceClass("go-dev-class", "1.2.3"))
@@ -96,17 +98,19 @@ func main() {
 	}
 	return
 
-	command := devicehive.NewCommand("hello", 12345)
-	err = s.InsertCommand(device, command, waitTimeout)
-	if err != nil {
-		log.Fatalf("Failed to insert command (error: %s)", err)
-	}
-	log.Alwaysf("command: %s", command)
-
-	command.Status = "Done"
-	command.Result = "No result"
-	err = s.UpdateCommand(device, command, waitTimeout)
-	if err != nil {
-		log.Fatalf("Failed to update command (error: %s)", err)
+	if false {
+//		command := devicehive.NewCommand("hello", 12345)
+//		err = s.InsertCommand(device, command, waitTimeout)
+//		if err != nil {
+//			log.Fatalf("Failed to insert command (error: %s)", err)
+//		}
+//		log.Alwaysf("command: %s", command)
+	
+//		command.Status = "Done"
+//		command.Result = "No result"
+//		err = s.UpdateCommand(device, command, waitTimeout)
+//		if err != nil {
+//			log.Fatalf("Failed to update command (error: %s)", err)
+//		}
 	}
 }

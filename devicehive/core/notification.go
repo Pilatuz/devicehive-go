@@ -17,9 +17,21 @@ type Notification struct {
 	Parameters interface{} `json:"parameters,omitempty"`
 }
 
+// Notification listener is used to listen for asynchronous notifications.
+type NotificationListener struct {
+	// channel to receive notifications
+	C chan *Notification
+}
+
 // NewNotification creates a new notification.
 func NewNotification(name string, parameters interface{}) *Notification {
 	return &Notification{Name: name, Parameters: parameters}
+}
+
+// NewNotificationListener creates a new notification listener.
+func NewNotificationListener() *NotificationListener {
+	ch := make(chan *Notification) // TODO: buffered?
+	return &NotificationListener{C: ch}
 }
 
 // Get Notification string representation

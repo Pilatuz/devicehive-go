@@ -69,7 +69,7 @@ func (service *Service) processInsertCommand(task Task, command *core.Command) (
 
 // InsertCommand() function inserts the device command.
 func (service *Service) InsertCommand(device *core.Device, command *core.Command, timeout time.Duration) (err error) {
-	log.Tracef("REST: inserting command %q to %q...", command.Name, device.Id)
+	log.Debugf("REST: inserting command %q to %q...", command.Name, device.Id)
 
 	task, err := service.prepareInsertCommand(device, command)
 	if err != nil {

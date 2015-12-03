@@ -69,7 +69,7 @@ func (service *Service) processPollCommand(task Task) (commands []core.Command, 
 
 // GetCommand() function poll the commands.
 func (service *Service) PollCommands(device *core.Device, timestamp, names, waitTimeout string, timeout time.Duration) (commands []core.Command, err error) {
-	log.Tracef("REST: polling commands %q...", device.Id)
+	log.Debugf("REST: polling commands %q, timestamp:%q...", device.Id, timestamp)
 
 	task, err := service.preparePollCommand(device, timestamp, names, waitTimeout)
 	if err != nil {

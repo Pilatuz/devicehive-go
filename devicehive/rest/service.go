@@ -22,8 +22,9 @@ type Service struct {
 	// HTTP client is used to perform all requests
 	client *http.Client
 
-	// set of command listeners
+	// set of command/notification listeners
 	commandListeners map[string]*core.CommandListener
+	notificationListeners map[string]*core.NotificationListener
 }
 
 // Get string representation of a service.
@@ -56,6 +57,7 @@ func NewService(baseUrl, accessKey string) (service *Service, err error) {
 	// TODO: client.Timeout
 
 	service.commandListeners = make(map[string]*core.CommandListener)
+	service.notificationListeners = make(map[string]*core.NotificationListener)
 	return
 }
 
@@ -132,10 +134,11 @@ func (service *Service) SubscribeCommands(device *core.Device, timestamp string,
 			cmds, err := service.PollCommands(device, timestamp, names, wait, 60*time.Second)
 			if err != nil {
 				log.Warnf("REST: failed to poll commands (error: %s)", err)
+				// TODO: break? wait and try again?
 			}
 			if listener, ok := service.commandListeners[deviceId]; ok {
 				for _, cmd := range cmds {
-					log.Infof("REST: got command %s received", cmd)
+					log.Debugf("REST: got command %s received", cmd)
 					timestamp = cmd.Timestamp
 					listener.C <- &cmd
 				}
@@ -152,5 +155,47 @@ func (service *Service) SubscribeCommands(device *core.Device, timestamp string,
 // unsubscribe from commands
 func (service *Service) UnsubscribeCommands(device *core.Device, timeout time.Duration) (err error) {
 	delete(service.commandListeners, device.Id) // poll loop will be stopped
+	return nil
+}
+
+// subscribe for notifications
+func (service *Service) SubscribeNotifications(device *core.Device, timestamp string, timeout time.Duration) (listener *core.NotificationListener, err error) {
+	if listener, ok := service.notificationListeners[device.Id]; ok {
+		return listener, nil
+	}
+
+	// install new
+	listener = core.NewNotificationListener()
+	service.notificationListeners[device.Id] = listener
+
+	go func(deviceId string) {
+		log.Debugf("REST: start notification polling %q", deviceId)
+		for {
+			names := ""
+			wait := "30"
+			ntfs, err := service.PollNotifications(device, timestamp, names, wait, 60*time.Second)
+			if err != nil {
+				log.Warnf("REST: failed to poll notifications (error: %s)", err)
+				// TODO: break? wait and try again?
+			}
+			if listener, ok := service.notificationListeners[deviceId]; ok {
+				for _, ntf := range ntfs {
+					log.Debugf("REST: got notification %s received", ntf)
+					timestamp = ntf.Timestamp
+					listener.C <- &ntf
+				}
+			} else {
+				log.Debugf("REST: stop notification polling %q", deviceId)
+				return // stop
+			}
+		}
+	}(device.Id)
+
+	return
+}
+
+// unsubscribe from notifications
+func (service *Service) UnsubscribeNotifications(device *core.Device, timeout time.Duration) (err error) {
+	delete(service.notificationListeners, device.Id) // poll loop will be stopped
 	return nil
 }

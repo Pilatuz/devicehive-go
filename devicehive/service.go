@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+const (
+	// Datetime layout used for timestamps
+	DateTimeLayout = core.DateTimeLayout
+)
+
 // Abstract DeviceHive /device API.
 type Service interface {
 	GetServerInfo(timeout time.Duration) (info *core.ServerInfo, err error)

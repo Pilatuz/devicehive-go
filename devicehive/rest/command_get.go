@@ -55,7 +55,7 @@ func (service *Service) processGetCommand(task Task, command *core.Command) (err
 
 // GetCommand() function get the command data.
 func (service *Service) GetCommand(device *core.Device, commandId uint64, timeout time.Duration) (command *core.Command, err error) {
-	log.Tracef("REST: getting command %q/%d...", device.Id, commandId)
+	log.Debugf("REST: getting command %q/%d...", device.Id, commandId)
 
 	task, err := service.prepareGetCommand(device, commandId)
 	if err != nil {

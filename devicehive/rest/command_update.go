@@ -70,7 +70,7 @@ func (service *Service) processUpdateCommand(task Task, command *core.Command) (
 
 // UpdateCommand() function updates the device command.
 func (service *Service) UpdateCommand(device *core.Device, command *core.Command, timeout time.Duration) (err error) {
-	log.Tracef("REST: updating command %q to %q...", command.Name, device.Id)
+	log.Debugf("REST: updating command %q to %q...", command.Name, device.Id)
 
 	task, err := service.prepareUpdateCommand(device, command)
 	if err != nil {

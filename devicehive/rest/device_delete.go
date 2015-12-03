@@ -33,7 +33,8 @@ func (service *Service) processDeleteDevice(task Task) (err error) {
 	}
 
 	// check status code
-	if task.response.StatusCode != http.StatusOK {
+	if task.response.StatusCode < http.StatusOK ||
+		task.response.StatusCode > http.StatusPartialContent {
 		log.Warnf("REST: unexpected /device/delete status %s",
 			task.response.Status)
 		err = fmt.Errorf("unexpected status: %s",
@@ -46,7 +47,7 @@ func (service *Service) processDeleteDevice(task Task) (err error) {
 
 // DeleteDevice() function deletes the device.
 func (service *Service) DeleteDevice(device *core.Device, timeout time.Duration) (err error) {
-	log.Tracef("REST: deleting device %q...", device.Id)
+	log.Debugf("REST: deleting device %q...", device.Id)
 
 	task, err := service.prepareDeleteDevice(device)
 	if err != nil {
