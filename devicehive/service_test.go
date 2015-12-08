@@ -59,6 +59,10 @@ func init() {
 
 // creates new REST service
 func testNewRest(t *testing.T) (service *rest.Service) {
+	if len(testRestServerUrl) == 0 {
+		return
+	}
+
 	service, err := rest.NewService(testRestServerUrl, testAccessKey)
 	if err != nil {
 		t.Errorf("Failed to create REST service (error: %s)", err)
@@ -68,6 +72,10 @@ func testNewRest(t *testing.T) (service *rest.Service) {
 
 // creates new Websocket service
 func testNewWs(t *testing.T) (service *ws.Service) {
+	if len(testWsServerUrl) == 0 {
+		return
+	}
+
 	service, err := ws.NewService(testWsServerUrl, testAccessKey)
 	if err != nil {
 		t.Errorf("Failed to create WS service (error: %s)", err)
@@ -188,8 +196,7 @@ func testCheckRegisterDevice1(t *testing.T, service Service, device core.Device,
 	}
 
 	if deletePrevious {
-		rs := testNewRest(t)
-		if !t.Failed() {
+		if rs := testNewRest(t); rs != nil {
 			_ = rs.DeleteDevice(&device, testWaitTimeout)
 			// ignore possible errors
 		}
@@ -253,7 +260,7 @@ func testCheckRegisterDevice(t *testing.T, service Service, device core.Device, 
 //}
 
 // Test RegisterDevice method (no network)
-func TestRegisterDeviceNoNet(t *testing.T) {
+func _TestRegisterDeviceNoNet(t *testing.T) {
 	device := testNewDevice()
 
 	testCheckRegisterDevice(t, testNewRestService(t), *device, "-2a")
@@ -370,6 +377,8 @@ func (s TimeStat) String() string {
 
 func TestBatchCommandInsert(t *testing.T) {
 	device := testNewDevice()
+	device.Network = testNewNetwork()
+
 	s := testNewRest(t)
 	s2 := s//testNewWs(t)
 
@@ -516,6 +525,8 @@ func TestInsertNotification(t *testing.T) {
 
 func TestBatchNotificationInsert(t *testing.T) {
 	device := testNewDevice()
+	device.Network = testNewNetwork()
+
 	s := testNewRest(t)
 	s2 := s//testNewWs(t)
 

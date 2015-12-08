@@ -79,6 +79,8 @@ func (network *Network) AssignJSON(rawData interface{}) error {
 		switch v := name.(type) {
 		case string:
 			network.Name = v
+		case nil:
+			network.Name = ""
 		default:
 			return fmt.Errorf("Network: %v - unexpected value for name", name)
 		}
@@ -89,6 +91,8 @@ func (network *Network) AssignJSON(rawData interface{}) error {
 		switch v := key.(type) {
 		case string:
 			network.Key = v
+		case nil:
+			network.Key = ""
 		default:
 			return fmt.Errorf("Network: %v - unexpected value for key", key)
 		}
@@ -100,7 +104,7 @@ func (network *Network) AssignJSON(rawData interface{}) error {
 		case string:
 			network.Description = v
 		case nil:
-			// do nothing
+			network.Description = ""
 		default:
 			return fmt.Errorf("Network: %v - unexpected value for description", d)
 		}
