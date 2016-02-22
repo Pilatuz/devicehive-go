@@ -144,7 +144,7 @@ func (command *Command) AssignJSON(rawData interface{}) error {
 	}
 
 	// name
-	if name, ok := data["name"]; ok {
+	if name, ok := data["command"]; ok {
 		switch v := name.(type) {
 		case string:
 			command.Name = v

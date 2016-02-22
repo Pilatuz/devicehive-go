@@ -380,7 +380,7 @@ func TestBatchCommandInsert(t *testing.T) {
 	device.Network = testNewNetwork()
 
 	s := testNewRest(t)
-	s2 := s//testNewWs(t)
+	s2 := testNewWs(t)
 
 	device.Id += "-batch-cmd"
 	testCheckRegisterDevice1(t, s, *device, true)
@@ -463,10 +463,10 @@ func TestBatchCommandInsert(t *testing.T) {
 		//		log.Infof("%d:\tTX:%q at %q\t\tRX:%q at %q", i,
 		//				tx.Parameters, tx.Timestamp,
 		//				rx.Parameters, rx.Timestamp)
-		//		if tx.Name != rx.Name {
-		//			t.Errorf("TX:%q != RX:%q command name mismatch", tx.Name, rx.Name)
-		//			continue
-		//		}
+		if tx.Name != rx.Name {
+			t.Errorf("TX:%q != RX:%q command name mismatch", tx.Name, rx.Name)
+			continue
+		}
 		tx_p := tx.Parameters.(string)
 		rx_p := rx.Parameters.(string)
 		if tx_p != rx_p {
