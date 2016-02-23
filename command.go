@@ -1,6 +1,9 @@
-package core
+package devicehive
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 // Represents command object - a set of data sent from DeviceHive to devices.
 type Command struct {
@@ -31,163 +34,89 @@ type Command struct {
 
 // Command listener is used to listen for asynchronous commands.
 type CommandListener struct {
-	// channel to receive commands
+	// Channel to receive commands.
 	C chan *Command
+}
+
+// NewEmptyCommand creates a new empty command.
+func NewEmptyCommand() *Command {
+	command := new(Command)
+	return command
 }
 
 // NewCommand creates a new command.
 // No lifetime set by default.
 func NewCommand(name string, parameters interface{}) *Command {
-	return &Command{Name: name, Parameters: parameters}
+	command := new(Command)
+	command.Name = name
+	command.Parameters = parameters
+	return command
 }
 
 // NewCommandResult creates a new command result.
 func NewCommandResult(id uint64, status string, result interface{}) *Command {
-	return &Command{Id: id, Status: status, Result: result}
+	command := new(Command)
+	command.Id = id
+	command.Status = status
+	command.Result = result
+	return command
 }
 
 // NewCommandListener creates a new command listener.
-func NewCommandListener() *CommandListener {
-	ch := make(chan *Command) // TODO: buffered?
-	return &CommandListener{C: ch}
+func NewCommandListener(buffered int) *CommandListener {
+	listener := new(CommandListener)
+	listener.C = make(chan *Command, buffered)
+	return listener
 }
 
-// Get Command string representation
+// Get Command string representation.
 func (command Command) String() string {
-	body := ""
+	// NOTE all errors are ignored!
+	body := new(bytes.Buffer)
 
 	// Id [optional]
 	if command.Id != 0 {
-		body += fmt.Sprintf("Id:%d, ", command.Id)
+		body.WriteString(fmt.Sprintf("Id:%d, ", command.Id))
 	}
 
 	// Name
-	body += fmt.Sprintf("Name:%q", command.Name)
+	body.WriteString(fmt.Sprintf("Name:%q", command.Name))
 
 	// Timestamp
 	if len(command.Timestamp) != 0 {
-		body += fmt.Sprintf(", Timestamp:%q", command.Timestamp)
+		body.WriteString(fmt.Sprintf(", Timestamp:%q", command.Timestamp))
 	}
 
 	// UserId
 	if command.UserId != 0 {
-		body += fmt.Sprintf(", UserId:%d", command.UserId)
+		body.WriteString(fmt.Sprintf(", UserId:%d", command.UserId))
 	}
 
 	// Lifetime
 	if command.Lifetime != 0 {
-		body += fmt.Sprintf(", Lifetime:%d", command.Lifetime)
+		body.WriteString(fmt.Sprintf(", Lifetime:%d", command.Lifetime))
 	}
 
 	// Parameters [optional]
 	if command.Parameters != nil {
-		body += fmt.Sprintf(", Parameters:%v", command.Parameters)
+		body.WriteString(fmt.Sprintf(", Parameters:%v", command.Parameters))
 	}
 
 	// Status
 	if len(command.Status) != 0 {
-		body += fmt.Sprintf(", Status:%q", command.Status)
+		body.WriteString(fmt.Sprintf(", Status:%q", command.Status))
 	}
 
 	// Result [optional]
 	if command.Result != nil {
-		body += fmt.Sprintf(", Result:%v", command.Result)
+		body.WriteString(fmt.Sprintf(", Result:%v", command.Result))
 	}
 
 	return fmt.Sprintf("Command{%s}", body)
 }
 
-// Assign parsed JSON.
+// Assign fields from map.
 // This method is used to assign already parsed JSON data.
-func (command *Command) AssignJSON(rawData interface{}) error {
-	if rawData == nil {
-		return fmt.Errorf("Command: no data")
-	}
-
-	data, ok := rawData.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("Command: %v - unexpected data type", rawData)
-	}
-
-	// identifier
-	if id, ok := data["id"]; ok {
-		switch v := id.(type) {
-		case float64:
-			command.Id = uint64(v)
-		case uint64:
-			command.Id = v
-		default:
-			return fmt.Errorf("Command: %v - unexpected value for id", id)
-		}
-	}
-
-	// timestamp
-	if ts, ok := data["timestamp"]; ok {
-		switch v := ts.(type) {
-		case string:
-			command.Timestamp = v
-		default:
-			return fmt.Errorf("Command: %v - unexpected value for timestamp", ts)
-		}
-	}
-
-	// user identifier
-	if id, ok := data["userId"]; ok {
-		switch v := id.(type) {
-		case float64:
-			command.UserId = uint64(v)
-		case uint64:
-			command.UserId = v
-		default:
-			return fmt.Errorf("Command: %v - unexpected value for userId", id)
-		}
-	}
-
-	// name
-	if name, ok := data["command"]; ok {
-		switch v := name.(type) {
-		case string:
-			command.Name = v
-		default:
-			return fmt.Errorf("Command: %v - unexpected value for name", name)
-		}
-	}
-
-	// lifetime
-	if lt, ok := data["lifetime"]; ok {
-		switch v := lt.(type) {
-		case float64:
-			command.Lifetime = uint64(v)
-		case uint64:
-			command.Lifetime = v
-		case nil:
-			command.Lifetime = 0
-		default:
-			return fmt.Errorf("Command: %v - unexpected value for lifetime", lt)
-		}
-	}
-
-	// parameters (as is)
-	if p, ok := data["parameters"]; ok {
-		command.Parameters = p
-	}
-
-	// status
-	if s, ok := data["status"]; ok {
-		switch v := s.(type) {
-		case string:
-			command.Status = v
-		case nil:
-			command.Status = ""
-		default:
-			return fmt.Errorf("Command: %v - unexpected value for status", s)
-		}
-	}
-
-	// result (as is)
-	if r, ok := data["result"]; ok {
-		command.Result = r
-	}
-
-	return nil // OK
+func (command *Command) FromMap(data interface{}) error {
+	return fromJsonMap(command, data)
 }

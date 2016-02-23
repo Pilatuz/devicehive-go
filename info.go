@@ -1,6 +1,8 @@
-package core
+package devicehive
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Represents DeviceHive server information
 type ServerInfo struct {
@@ -41,61 +43,8 @@ func (info ServerInfo) String() string {
 		info.Version, info.Timestamp)
 }
 
-// Assign parsed JSON.
+// Assign fields from map.
 // This method is used to assign already parsed JSON data.
-func (info *ServerInfo) AssignJSON(rawData interface{}) error {
-	if rawData == nil {
-		return fmt.Errorf("ServerInfo: no data")
-	}
-
-	data, ok := rawData.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("ServerInfo: %v - unexpected data type", rawData)
-	}
-
-	// version
-	if av, ok := data["apiVersion"]; ok {
-		switch v := av.(type) {
-		case string:
-			info.Version = v
-		default:
-			return fmt.Errorf("ServerInfo: %v - unexpected value for version", av)
-		}
-	}
-
-	// timestamp
-	if ts, ok := data["serverTimestamp"]; ok {
-		switch v := ts.(type) {
-		case string:
-			info.Timestamp = v
-		default:
-			return fmt.Errorf("ServerInfo: %v - unexpected value for timestamp", ts)
-		}
-	}
-
-	// websocket URL
-	if ws, ok := data["webSocketServerUrl"]; ok {
-		switch v := ws.(type) {
-		case string:
-			info.WebsocketUrl = v
-		case nil:
-			// do nothing
-		default:
-			return fmt.Errorf("ServerInfo: %v - unexpected value for websocketUrl", ws)
-		}
-	}
-
-	// rest URL
-	if rest, ok := data["restServerUrl"]; ok {
-		switch v := rest.(type) {
-		case string:
-			info.RestUrl = v
-		case nil:
-			// do nothing
-		default:
-			return fmt.Errorf("ServerInfo: %v - unexpected value for restUrl", rest)
-		}
-	}
-
-	return nil // OK
+func (info *ServerInfo) FromMap(data interface{}) error {
+	return fromJsonMap(info, data)
 }

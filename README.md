@@ -5,7 +5,7 @@
 To import package just run:
 
 ```
-$ go get -d -u github.com/devicehive/go-devicehive
+$ go get -d -t -u github.com/devicehive/go-devicehive
 ```
 
 on from go source:

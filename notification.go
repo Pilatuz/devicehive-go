@@ -1,6 +1,9 @@
-package core
+package devicehive
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 // Represents notification object - a set of data sent from devices to DeviceHive.
 type Notification struct {
@@ -19,94 +22,59 @@ type Notification struct {
 
 // Notification listener is used to listen for asynchronous notifications.
 type NotificationListener struct {
-	// channel to receive notifications
+	// Channel to receive notifications
 	C chan *Notification
+}
+
+// NewEmptyNotification creates an empty notification.
+func NewEmptyNotification() *Notification {
+	notification := new(Notification)
+	return notification
 }
 
 // NewNotification creates a new notification.
 func NewNotification(name string, parameters interface{}) *Notification {
-	return &Notification{Name: name, Parameters: parameters}
+	notification := new(Notification)
+	notification.Name = name
+	notification.Parameters = parameters
+	return notification
 }
 
 // NewNotificationListener creates a new notification listener.
-func NewNotificationListener() *NotificationListener {
-	ch := make(chan *Notification) // TODO: buffered?
-	return &NotificationListener{C: ch}
+func NewNotificationListener(buffered int) *NotificationListener {
+	listener := new(NotificationListener)
+	listener.C = make(chan *Notification, buffered)
+	return listener
 }
 
 // Get Notification string representation
 func (notification Notification) String() string {
-	body := ""
+	// NOTE all errors are ignored!
+	body := new(bytes.Buffer)
 
 	// Id [optional]
 	if notification.Id != 0 {
-		body += fmt.Sprintf("Id:%d, ", notification.Id)
+		body.WriteString(fmt.Sprintf("Id:%d, ", notification.Id))
 	}
 
 	// Name
-	body += fmt.Sprintf("Name:%q", notification.Name)
+	body.WriteString(fmt.Sprintf("Name:%q", notification.Name))
 
 	// Timestamp
 	if len(notification.Timestamp) != 0 {
-		body += fmt.Sprintf(", Timestamp:%q", notification.Timestamp)
+		body.WriteString(fmt.Sprintf(", Timestamp:%q", notification.Timestamp))
 	}
 
 	// Parameters [optional]
 	if notification.Parameters != nil {
-		body += fmt.Sprintf(", Parameters:%v", notification.Parameters)
+		body.WriteString(fmt.Sprintf(", Parameters:%v", notification.Parameters))
 	}
 
 	return fmt.Sprintf("Notification{%s}", body)
 }
 
-// Assign parsed JSON.
+// Assign fields from map.
 // This method is used to assign already parsed JSON data.
-func (notification *Notification) AssignJSON(rawData interface{}) error {
-	if rawData == nil {
-		return fmt.Errorf("Notification: no data")
-	}
-
-	data, ok := rawData.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("Notification: %v - unexpected data type", rawData)
-	}
-
-	// identifier
-	if id, ok := data["id"]; ok {
-		switch v := id.(type) {
-		case float64:
-			notification.Id = uint64(v)
-		case uint64:
-			notification.Id = v
-		default:
-			return fmt.Errorf("Notification: %v - unexpected value for id", id)
-		}
-	}
-
-	// timestamp
-	if ts, ok := data["timestamp"]; ok {
-		switch v := ts.(type) {
-		case string:
-			notification.Timestamp = v
-		default:
-			return fmt.Errorf("Notification: %v - unexpected value for timestamp", ts)
-		}
-	}
-
-	// name
-	if name, ok := data["name"]; ok {
-		switch v := name.(type) {
-		case string:
-			notification.Name = v
-		default:
-			return fmt.Errorf("Notification: %v - unexpected value for name", name)
-		}
-	}
-
-	// parameters (as is)
-	if p, ok := data["parameters"]; ok {
-		notification.Parameters = p
-	}
-
-	return nil // OK
+func (notification *Notification) FromMap(data interface{}) error {
+	return fromJsonMap(notification, data)
 }

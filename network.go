@@ -1,6 +1,9 @@
-package core
+package devicehive
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 // Represents a network - a custom set of devices.
 type Network struct {
@@ -27,88 +30,32 @@ func NewNetwork(name, key string) *Network {
 
 // Get Network string representation
 func (network Network) String() string {
-	body := ""
+	// NOTE all errors are ignored!
+	body := new(bytes.Buffer)
 
 	// Id [optional]
 	if network.Id != 0 {
-		body += fmt.Sprintf("Id:%d, ", network.Id)
+		body.WriteString(fmt.Sprintf("Id:%d, ", network.Id))
 	}
 
 	// Name
-	body += fmt.Sprintf("Name:%q", network.Name)
+	body.WriteString(fmt.Sprintf("Name:%q", network.Name))
 
 	// Key [optional]
 	if len(network.Key) != 0 {
-		body += fmt.Sprintf(", Key:%q", network.Key)
+		body.WriteString(fmt.Sprintf(", Key:%q", network.Key))
 	}
 
 	// Description [optional]
 	if len(network.Description) != 0 {
-		body += fmt.Sprintf(", Description:%q", network.Description)
+		body.WriteString(fmt.Sprintf(", Description:%q", network.Description))
 	}
 
 	return fmt.Sprintf("Network{%s}", body)
 }
 
-// Assign parsed JSON.
+// Assign fields from map.
 // This method is used to assign already parsed JSON data.
-func (network *Network) AssignJSON(rawData interface{}) error {
-	if rawData == nil {
-		return fmt.Errorf("Network: no data")
-	}
-
-	data, ok := rawData.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("Network: %v - unexpected data type", rawData)
-	}
-
-	// identifier
-	if id, ok := data["id"]; ok {
-		switch v := id.(type) {
-		case float64:
-			network.Id = uint64(v)
-		case uint64:
-			network.Id = v
-		default:
-			return fmt.Errorf("Network: %v - unexpected value for id", id)
-		}
-	}
-
-	// name
-	if name, ok := data["name"]; ok {
-		switch v := name.(type) {
-		case string:
-			network.Name = v
-		case nil:
-			network.Name = ""
-		default:
-			return fmt.Errorf("Network: %v - unexpected value for name", name)
-		}
-	}
-
-	// key
-	if key, ok := data["key"]; ok {
-		switch v := key.(type) {
-		case string:
-			network.Key = v
-		case nil:
-			network.Key = ""
-		default:
-			return fmt.Errorf("Network: %v - unexpected value for key", key)
-		}
-	}
-
-	// description
-	if d, ok := data["description"]; ok {
-		switch v := d.(type) {
-		case string:
-			network.Description = v
-		case nil:
-			network.Description = ""
-		default:
-			return fmt.Errorf("Network: %v - unexpected value for description", d)
-		}
-	}
-
-	return nil // OK
+func (network *Network) FromMap(data interface{}) error {
+	return fromJsonMap(network, data)
 }

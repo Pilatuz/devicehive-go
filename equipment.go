@@ -1,6 +1,9 @@
-package core
+package devicehive
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 // Represents equipment object - a peripheral or sensor hosted on device.
 type Equipment struct {
@@ -24,91 +27,42 @@ type Equipment struct {
 // NewEquipment creates a new equipment.
 // No user data by default.
 func NewEquipment(name, code, type_ string) *Equipment {
-	return &Equipment{Name: name, Code: code, Type: type_}
+	equipment := new(Equipment)
+	equipment.Name = name
+	equipment.Code = code
+	equipment.Type = type_
+	return equipment
 }
 
 // Get Equipment string representation
 func (equipment Equipment) String() string {
-	body := ""
+	// NOTE all errors are ignored!
+	body := new(bytes.Buffer)
 
 	// Id [optional]
 	if equipment.Id != 0 {
-		body += fmt.Sprintf("Id:%d, ", equipment.Id)
+		body.WriteString(fmt.Sprintf("Id:%d, ", equipment.Id))
 	}
 
 	// Name
-	body += fmt.Sprintf("Name:%q", equipment.Name)
+	body.WriteString(fmt.Sprintf("Name:%q", equipment.Name))
 
 	// Code
-	body += fmt.Sprintf(", Code:%q", equipment.Code)
+	body.WriteString(fmt.Sprintf(", Code:%q", equipment.Code))
 
 	// Type
-	body += fmt.Sprintf(", Type:%q", equipment.Type)
+	body.WriteString(fmt.Sprintf(", Type:%q", equipment.Type))
 
 	// Data [optional]
-	body += fmt.Sprintf(", Data:%v", equipment.Data)
+	if equipment.Data != nil {
+		body.WriteString(fmt.Sprintf(", Data:%v", equipment.Data))
+	}
 
 	return fmt.Sprintf("Equipment{%s}", body)
 }
 
-// Assign parsed JSON.
+// Assign fields from map.
 // This method is used to assign already parsed JSON data.
-func (equipment *Equipment) AssignJSON(rawData interface{}) error {
-	if rawData == nil {
-		return fmt.Errorf("Equipment: no data")
-	}
-
-	data, ok := rawData.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("Equipment: %v - unexpected data type", rawData)
-	}
-
-	// identifier
-	if id, ok := data["id"]; ok {
-		switch v := id.(type) {
-		case float64:
-			equipment.Id = uint64(v)
-		case uint64:
-			equipment.Id = v
-		default:
-			return fmt.Errorf("Equipment: %v - unexpected value for id", id)
-		}
-	}
-
-	// name
-	if name, ok := data["name"]; ok {
-		switch v := name.(type) {
-		case string:
-			equipment.Name = v
-		default:
-			return fmt.Errorf("Equipment: %v - unexpected value for name", name)
-		}
-	}
-
-	// code
-	if code, ok := data["code"]; ok {
-		switch v := code.(type) {
-		case string:
-			equipment.Code = v
-		default:
-			return fmt.Errorf("Equipment: %v - unexpected value for code", code)
-		}
-	}
-
-	// type
-	if t, ok := data["type"]; ok {
-		switch v := t.(type) {
-		case string:
-			equipment.Type = v
-		default:
-			return fmt.Errorf("Equipment: %v - unexpected value for type", t)
-		}
-	}
-
-	// data (as is)
-	if d, ok := data["data"]; ok {
-		equipment.Data = d
-	}
-
-	return nil // OK
+func (equipment *Equipment) FromMap(data interface{}) error {
+	return fromJsonMap(equipment, data)
 }

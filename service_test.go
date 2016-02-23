@@ -1,12 +1,10 @@
+// +build ignore
+
 package devicehive
 
 import (
 	"flag"
 	"fmt"
-	"github.com/devicehive/devicehive-go/devicehive/core"
-	"github.com/devicehive/devicehive-go/devicehive/log"
-	"github.com/devicehive/devicehive-go/devicehive/rest"
-	"github.com/devicehive/devicehive-go/devicehive/ws"
 	"strings"
 	"testing"
 	"time"
@@ -528,7 +526,7 @@ func TestBatchNotificationInsert(t *testing.T) {
 	device.Network = testNewNetwork()
 
 	s := testNewRest(t)
-	s2 := s//testNewWs(t)
+	s2 := s //testNewWs(t)
 
 	device.Id += "-batch-ntf"
 	testCheckRegisterDevice1(t, s, *device, true)
