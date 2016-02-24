@@ -3,30 +3,44 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/devicehive/devicehive-go/devicehive/core"
-	"github.com/devicehive/devicehive-go/devicehive/log"
 	"net/http"
 	"time"
+
+	"github.com/pilatuz/go-devicehive"
 )
 
-// Prepare GetServerInfo task
-func (service *Service) prepareGetServerInfo() (task Task, err error) {
+// GetServerInfo() function gets the main server's information.
+func (service *Service) GetServerInfo(timeout time.Duration) (info *devicehive.ServerInfo, err error) {
+	task := newTask()
+	task.log().Debugf("[%s]: getting server info...", TAG)
+
 	// create request
-	url := fmt.Sprintf("%s/info", service.baseUrl)
-	task.request, err = http.NewRequest("GET", url, nil)
+	url := *service.baseUrl
+	url.Path += "/info"
+	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Warnf("REST: failed to create /info request (error: %s)", err)
-		return
+		task.log().Warnf("[%s]: failed to create /info request: %s", TAG, err)
+		return nil, fmt.Errorf("failed to create /info request: %s", err)
 	}
 
 	// authorization
-	service.prepareAuthorization(task.request, nil)
+	service.prepareAuthorization(request, nil)
 
-	return
-}
+	select {
+	case <-time.After(timeout):
+		close(request.Cancel) // cancel request
+		task.log().Warnf("[%s]: failed to wait %s for /info response", TAG, timeout)
+		return nil, fmt.Errorf("failed to get /info response: timed out (%s)", timeout)
 
-// Process GetServerInfo task
-func (service *Service) processGetServerInfo(task Task, info *core.ServerInfo) (err error) {
+	case task = <-service.doAsync(task):
+		info = &core.ServerInfo{}
+		err = service.processGetServerInfo(task, info)
+		if err != nil {
+			log.Warnf("REST: failed to process /info task (error: %s)", err)
+			return
+		}
+	}
+
 	// check task error first
 	if task.err != nil {
 		err = task.err
@@ -47,33 +61,6 @@ func (service *Service) processGetServerInfo(task Task, info *core.ServerInfo) (
 	if err != nil {
 		log.Warnf("REST: failed to parse /info body (error: %s)", err)
 		return
-	}
-
-	return
-}
-
-// GetServerInfo() function gets the main server's information.
-func (service *Service) GetServerInfo(timeout time.Duration) (info *core.ServerInfo, err error) {
-	log.Tracef("REST: getting server info...")
-
-	task, err := service.prepareGetServerInfo()
-	if err != nil {
-		log.Warnf("REST: failed to prepare /info task (error: %s)", err)
-		return
-	}
-
-	select {
-	case <-time.After(timeout):
-		log.Warnf("REST: failed to wait %s for /info task", timeout)
-		err = fmt.Errorf("timed out")
-
-	case task = <-service.doAsync(task):
-		info = &core.ServerInfo{}
-		err = service.processGetServerInfo(task, info)
-		if err != nil {
-			log.Warnf("REST: failed to process /info task (error: %s)", err)
-			return
-		}
 	}
 
 	return

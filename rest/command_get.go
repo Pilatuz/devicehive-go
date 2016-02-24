@@ -1,16 +1,18 @@
+// +build ignore
+
 package rest
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/devicehive/devicehive-go/devicehive/core"
-	"github.com/devicehive/devicehive-go/devicehive/log"
 	"net/http"
 	"time"
+
+	"github.com/pilatuz/go-devicehive"
 )
 
 // Prepare GetCommand task
-func (service *Service) prepareGetCommand(device *core.Device, commandId uint64) (task Task, err error) {
+func (service *Service) prepareGetCommand(device *devicehive.Device, commandId uint64) (task Task, err error) {
 	// create request
 	url := fmt.Sprintf("%s/device/%s/command/%d", service.baseUrl, device.Id, commandId)
 

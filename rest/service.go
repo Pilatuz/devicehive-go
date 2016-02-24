@@ -2,13 +2,21 @@ package rest
 
 import (
 	"fmt"
-	"github.com/devicehive/devicehive-go/devicehive/core"
-	"github.com/devicehive/devicehive-go/devicehive/log"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/pilatuz/go-devicehive"
+)
+
+var (
+	// package logger instance
+	log = logrus.New()
+
+	TAG = "DH-REST"
 )
 
 // REST service.
@@ -23,8 +31,8 @@ type Service struct {
 	client *http.Client
 
 	// set of command/notification listeners
-	commandListeners map[string]*core.CommandListener
-	notificationListeners map[string]*core.NotificationListener
+	commandListeners      map[string]*devicehive.CommandListener
+	notificationListeners map[string]*devicehive.NotificationListener
 }
 
 // Get string representation of a service.
@@ -81,6 +89,11 @@ type Task struct {
 	response *http.Response
 	body     []byte
 	err      error
+}
+
+// log returns task related log entry.
+func (task *Task) log() *logrus.Entry {
+	return log.WithField("task", task.Identifier)
 }
 
 // Do a request/task asynchronously

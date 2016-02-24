@@ -1,11 +1,13 @@
+// +build ignore
+
 package rest
 
 import (
 	"fmt"
-	"github.com/devicehive/devicehive-go/devicehive/core"
-	"github.com/devicehive/devicehive-go/devicehive/log"
 	"net/http"
 	"time"
+
+	"github.com/pilatuz/go-devicehive"
 )
 
 // Prepare DeleteNetwork task

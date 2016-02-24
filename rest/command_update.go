@@ -1,13 +1,15 @@
+// +build ignore
+
 package rest
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/devicehive/devicehive-go/devicehive/core"
-	"github.com/devicehive/devicehive-go/devicehive/log"
 	"net/http"
 	"time"
+
+	"github.com/pilatuz/go-devicehive"
 )
 
 // Prepare UpdateCommand task
