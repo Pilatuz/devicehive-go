@@ -1,8 +1,14 @@
 package rest
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"sync/atomic"
+	"time"
 )
 
 var (
@@ -12,16 +18,22 @@ var (
 // Asynchronous request/task.
 type asyncTask struct {
 	identifier uint64
+	timeout    time.Duration
 
+	method   string
+	URL      *url.URL
 	request  *http.Request
 	response *http.Response
 }
 
 // create new async task.
 // assigns new unique identifier
-func newTask() *asyncTask {
+func newTask(method string, URL *url.URL, timeout time.Duration) *asyncTask {
 	task := new(asyncTask)
 	task.identifier = atomic.AddUint64(&taskID, 1)
+	task.timeout = timeout
+	task.method = method
+	task.URL = URL
 	return task
 }
 
@@ -49,4 +61,87 @@ func (service *Service) doAsync(task *asyncTask) <-chan error {
 	}()
 
 	return ch
+}
+
+// send request and parse response (expectes 200 status code)
+func (service *Service) do200(task *asyncTask, OP string, body interface{}, result interface{}) error {
+	return service.do(task, OP, body, result, func(status int) bool { return status == http.StatusOK })
+}
+
+// send request and parse response (expectes 200..206 status code)
+func (service *Service) do2xx(task *asyncTask, OP string, body interface{}, result interface{}) error {
+	return service.do(task, OP, body, result, func(status int) bool { return status >= http.StatusOK && status <= 299 })
+}
+
+// send request and parse response
+func (service *Service) do(task *asyncTask, OP string, body interface{}, result interface{},
+	checkStatus func(status int) bool) (err error) {
+	task.log().WithField("url", task.URL).Debugf("[%s]: getting %s...", TAG, OP)
+
+	// build request body
+	var requestBody io.Reader
+	if body != nil {
+		task.log().WithField("request", body).Infof("[%s]: prepared request", TAG)
+
+		buf := new(bytes.Buffer)
+		enc := json.NewEncoder(buf)
+		err := enc.Encode(body)
+		if err != nil {
+			task.log().WithError(err).Warnf("[%s]: failed to build %s body", TAG, OP)
+			return fmt.Errorf("failed to build %s body: %s", OP, err)
+		}
+
+		requestBody = buf
+	}
+
+	// create request
+	task.request, err = http.NewRequest(task.method, task.URL.String(), requestBody)
+	if err != nil {
+		task.log().WithError(err).Warnf("[%s]: failed to create %s request", TAG, OP)
+		return fmt.Errorf("failed to create %s request: %s", OP, err)
+	}
+
+	// content type
+	if requestBody != nil {
+		task.request.Header.Add("Content-Type", "application/json")
+	}
+
+	// authorization
+	service.prepareAuthorization(task.request, nil)
+
+	select {
+	case <-time.After(task.timeout):
+		// TODO: task.request.Cancel // cancel request
+		task.log().WithField("timeout", task.timeout).Warnf("[%s]: failed to wait %s response: timed out", TAG, OP)
+		return fmt.Errorf("failed to wait %s response: timed out (%s)", OP, task.timeout)
+
+	case err = <-service.doAsync(task):
+		if err != nil {
+			task.log().WithError(err).Warnf("[%s]: failed to get %s response", TAG, OP)
+			return fmt.Errorf("failed to get %s response: %s", OP, err)
+		}
+	}
+
+	// important to close response body!
+	defer task.response.Body.Close()
+
+	// check status code
+	if !checkStatus(task.response.StatusCode) {
+		task.log().WithField("status", task.response.Status).Warnf("[%s]: unexpected %s status", TAG, OP)
+		return fmt.Errorf("unexpected %s status: %s", OP, task.response.Status)
+	}
+
+	// unmarshal
+	if result != nil {
+		dec := json.NewDecoder(task.response.Body)
+		err = dec.Decode(result)
+		if err != nil {
+			task.log().WithError(err).Warnf("[%s]: failed to parse %s body", TAG, OP)
+			return fmt.Errorf("failed to parse %s body: %s", OP, err)
+		}
+
+		task.log().WithField("response", result).Infof("[%s]: parsed response", TAG)
+	}
+
+	return nil // OK
 }

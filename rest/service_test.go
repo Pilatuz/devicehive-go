@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"encoding/json"
 	"flag"
 	"testing"
 	"time"
@@ -35,4 +36,14 @@ func testNewRest(t *testing.T) *Service {
 	assert.NoError(t, err, "Failed to create REST service")
 	assert.NotNil(t, service, "No service created")
 	return service
+}
+
+// convert object to JSON string.
+func toJsonStr(v interface{}) string {
+	b, err := json.Marshal(v)
+	if err != nil {
+		// t.Errorf("Cannot convert %s to JSON (error: %s)", v, err)
+		return "-" // bad JSON
+	}
+	return string(b)
 }
