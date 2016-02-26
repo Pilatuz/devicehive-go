@@ -5,10 +5,10 @@ import (
 	"fmt"
 )
 
-// Represents a network - a custom set of devices.
+// Network represents a network - a custom set of devices.
 type Network struct {
 	// Unique identifier [do not change].
-	Id uint64 `json:"id,omitempty"`
+	ID uint64 `json:"id,omitempty"`
 
 	// Display name.
 	Name string `json:"name"`
@@ -34,8 +34,8 @@ func (network Network) String() string {
 	body := new(bytes.Buffer)
 
 	// Id [optional]
-	if network.Id != 0 {
-		body.WriteString(fmt.Sprintf("Id:%d, ", network.Id))
+	if network.ID != 0 {
+		body.WriteString(fmt.Sprintf("ID:%d, ", network.ID))
 	}
 
 	// Name
@@ -54,8 +54,8 @@ func (network Network) String() string {
 	return fmt.Sprintf("Network{%s}", body)
 }
 
-// Assign fields from map.
+// FromMap assigns fields from map.
 // This method is used to assign already parsed JSON data.
 func (network *Network) FromMap(data interface{}) error {
-	return fromJsonMap(network, data)
+	return fromJSON(network, data)
 }

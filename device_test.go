@@ -6,6 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TODO: Device to string
+// TODO: Device from map
+
 // Test Device JSON marshaling
 func TestDeviceJson(t *testing.T) {
 	device := NewDevice("dev-id", "dev-name", nil)

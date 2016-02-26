@@ -5,16 +5,16 @@ import (
 	"fmt"
 )
 
-// Represents command object - a set of data sent from DeviceHive to devices.
+// Command represents command object - a set of data sent from DeviceHive to devices.
 type Command struct {
 	// Unique identifier [do not change].
-	Id uint64 `json:"id,omitempty"`
+	ID uint64 `json:"id,omitempty"`
 
 	// Timestamp, UTC.
 	Timestamp string `json:"timestamp,omitempty"`
 
 	// Accociated user identifier.
-	UserId uint64 `json:"userId,omitempty"`
+	UserID uint64 `json:"userId,omitempty"`
 
 	// Command name.
 	Name string `json:"command,omitempty"`
@@ -32,7 +32,7 @@ type Command struct {
 	Result interface{} `json:"result,omitempty"`
 }
 
-// Command listener is used to listen for asynchronous commands.
+// CommandListener is used to listen for asynchronous commands.
 type CommandListener struct {
 	// Channel to receive commands.
 	C chan *Command
@@ -56,7 +56,7 @@ func NewCommand(name string, parameters interface{}) *Command {
 // NewCommandResult creates a new command result.
 func NewCommandResult(id uint64, status string, result interface{}) *Command {
 	command := new(Command)
-	command.Id = id
+	command.ID = id
 	command.Status = status
 	command.Result = result
 	return command
@@ -75,8 +75,8 @@ func (command Command) String() string {
 	body := new(bytes.Buffer)
 
 	// Id [optional]
-	if command.Id != 0 {
-		body.WriteString(fmt.Sprintf("Id:%d, ", command.Id))
+	if command.ID != 0 {
+		body.WriteString(fmt.Sprintf("ID:%d, ", command.ID))
 	}
 
 	// Name
@@ -88,8 +88,8 @@ func (command Command) String() string {
 	}
 
 	// UserId
-	if command.UserId != 0 {
-		body.WriteString(fmt.Sprintf(", UserId:%d", command.UserId))
+	if command.UserID != 0 {
+		body.WriteString(fmt.Sprintf(", UserID:%d", command.UserID))
 	}
 
 	// Lifetime
@@ -115,8 +115,8 @@ func (command Command) String() string {
 	return fmt.Sprintf("Command{%s}", body)
 }
 
-// Assign fields from map.
+// FromMap assigns fields from map.
 // This method is used to assign already parsed JSON data.
 func (command *Command) FromMap(data interface{}) error {
-	return fromJsonMap(command, data)
+	return fromJSON(command, data)
 }

@@ -5,10 +5,10 @@ import (
 	"fmt"
 )
 
-// Represents device class which holds meta-information related to device.
+// DeviceClass represents device class which holds meta-information related to device.
 type DeviceClass struct {
 	// Unique identifier [do not change].
-	Id uint64 `json:"id,omitempty"`
+	ID uint64 `json:"id,omitempty"`
 
 	// Display name.
 	Name string `json:"name"`
@@ -41,7 +41,7 @@ func NewDeviceClass(name, version string) *DeviceClass {
 	return deviceClass
 }
 
-// AddEquipment() adds a new equipment to the device class
+// AddEquipment adds a new equipment to the device class
 func (deviceClass *DeviceClass) AddEquipment(equipment ...*Equipment) {
 	deviceClass.Equipment = append(deviceClass.Equipment, equipment...)
 }
@@ -52,8 +52,8 @@ func (deviceClass DeviceClass) String() string {
 	body := new(bytes.Buffer)
 
 	// Id [optional]
-	if deviceClass.Id != 0 {
-		body.WriteString(fmt.Sprintf("Id:%d, ", deviceClass.Id))
+	if deviceClass.ID != 0 {
+		body.WriteString(fmt.Sprintf("ID:%d, ", deviceClass.ID))
 	}
 
 	// Name
@@ -87,8 +87,8 @@ func (deviceClass DeviceClass) String() string {
 	return fmt.Sprintf("DeviceClass{%s}", body)
 }
 
-// Assign fields from map.
+// FromMap assigns fields from map.
 // This method is used to assign already parsed JSON data.
 func (deviceClass *DeviceClass) FromMap(data interface{}) error {
-	return fromJsonMap(deviceClass, data)
+	return fromJSON(deviceClass, data)
 }

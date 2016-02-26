@@ -12,10 +12,10 @@ func TestCommandString(t *testing.T) {
 	command.Timestamp = "2005-10-22"
 	assert.Equal(t, command.String(), `Command{Name:"cmd-name", Timestamp:"2005-10-22", Parameters:hello}`)
 
-	command.Id = 100
+	command.ID = 100
 	command.Result = "data"
 	command.Status = "done"
-	assert.Equal(t, command.String(), `Command{Id:100, Name:"cmd-name", Timestamp:"2005-10-22", Parameters:hello, Status:"done", Result:data}`)
+	assert.Equal(t, command.String(), `Command{ID:100, Name:"cmd-name", Timestamp:"2005-10-22", Parameters:hello, Status:"done", Result:data}`)
 }
 
 // Test Command JSON marshaling.
@@ -24,7 +24,7 @@ func TestCommandJson(t *testing.T) {
 	command.Timestamp = "2005-10-22"
 	assert.JSONEq(t, toJsonStr(t, command), `{"timestamp":"2005-10-22","command":"cmd-name","parameters":"hello"}`)
 
-	command.Id = 100
+	command.ID = 100
 	command.Result = "data"
 	command.Status = "done"
 	assert.JSONEq(t, toJsonStr(t, command), `{"id":100,"timestamp":"2005-10-22","command":"cmd-name","parameters":"hello","status":"done","result":"data"}`)

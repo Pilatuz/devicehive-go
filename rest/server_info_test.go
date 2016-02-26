@@ -26,11 +26,11 @@ func TestGetServerInfoOK(t *testing.T) {
 
 // Test GetServerInfo method (invalid server address)
 func TestGetServerInfoBadAddress(t *testing.T) {
-	if len(testServerUrl) == 0 {
+	if len(testServerURL) == 0 {
 		return // nothing to test
 	}
 
-	service, err := NewService(strings.Replace(testServerUrl, ".", "_", -1), "")
+	service, err := NewService(strings.Replace(testServerURL, ".", "_", -1), "")
 	assert.NoError(t, err, "Failed to create service")
 	assert.NotNil(t, service, "No service created")
 
@@ -41,11 +41,11 @@ func TestGetServerInfoBadAddress(t *testing.T) {
 
 // Test GetServerInfo method (invalid path)
 func TestGetServerInfoBadPath(t *testing.T) {
-	if len(testServerUrl) == 0 {
+	if len(testServerURL) == 0 {
 		return // nothing to test
 	}
 
-	service, err := NewService(strings.Replace(testServerUrl, "rest", "reZZZt", -1), "")
+	service, err := NewService(strings.Replace(testServerURL, "rest", "reZZZt", -1), "")
 	assert.NoError(t, err, "Failed to create service")
 	assert.NotNil(t, service, "No service created")
 

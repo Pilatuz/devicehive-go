@@ -5,10 +5,10 @@ import (
 	"fmt"
 )
 
-// Represents equipment object - a peripheral or sensor hosted on device.
+// Equipment represents equipment object - a peripheral or sensor hosted on device.
 type Equipment struct {
 	// Unique identifier [do not change].
-	Id uint64 `json:"id,omitempty"`
+	ID uint64 `json:"id,omitempty"`
 
 	// Display name.
 	Name string `json:"name"`
@@ -26,11 +26,11 @@ type Equipment struct {
 
 // NewEquipment creates a new equipment.
 // No user data by default.
-func NewEquipment(name, code, type_ string) *Equipment {
+func NewEquipment(name, code, typE string) *Equipment {
 	equipment := new(Equipment)
 	equipment.Name = name
 	equipment.Code = code
-	equipment.Type = type_
+	equipment.Type = typE
 	return equipment
 }
 
@@ -40,8 +40,8 @@ func (equipment Equipment) String() string {
 	body := new(bytes.Buffer)
 
 	// Id [optional]
-	if equipment.Id != 0 {
-		body.WriteString(fmt.Sprintf("Id:%d, ", equipment.Id))
+	if equipment.ID != 0 {
+		body.WriteString(fmt.Sprintf("ID:%d, ", equipment.ID))
 	}
 
 	// Name
@@ -61,8 +61,8 @@ func (equipment Equipment) String() string {
 	return fmt.Sprintf("Equipment{%s}", body)
 }
 
-// Assign fields from map.
+// FromMap assigns fields from map.
 // This method is used to assign already parsed JSON data.
 func (equipment *Equipment) FromMap(data interface{}) error {
-	return fromJsonMap(equipment, data)
+	return fromJSON(equipment, data)
 }

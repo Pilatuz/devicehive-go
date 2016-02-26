@@ -6,6 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TODO: DeviceClass to string
+// TODO: DeviceClass from map
+
 // Test DeviceClass JSON marshaling
 func TestDeviceClassJson(t *testing.T) {
 	deviceClass := NewDeviceClass("class-name", "1.2.3")
@@ -13,6 +16,6 @@ func TestDeviceClassJson(t *testing.T) {
 	assert.JSONEq(t, toJsonStr(t, deviceClass), `{"name":"class-name","version":"1.2.3","offlineTimeout":60}`)
 
 	deviceClass.Data = "custom data"
-	deviceClass.Id = 100
+	deviceClass.ID = 100
 	assert.JSONEq(t, toJsonStr(t, deviceClass), `{"id":100,"name":"class-name","version":"1.2.3","offlineTimeout":60,"data":"custom data"}`)
 }

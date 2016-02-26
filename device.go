@@ -5,10 +5,10 @@ import (
 	"fmt"
 )
 
-// Represents a device - unit that communicate with DeviceHive.
+// Device represents a device - unit that communicate with DeviceHive.
 type Device struct {
 	// Unique identifier.
-	Id string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 
 	// Display name.
 	Name string `json:"name,omitempty"`
@@ -44,7 +44,7 @@ func NewDevice(id, name string, class *DeviceClass) *Device {
 // No user data by default.
 func NewDeviceWithNetwork(id, name string, class *DeviceClass, network *Network) *Device {
 	device := new(Device)
-	device.Id = id
+	device.ID = id
 	device.Name = name
 	device.DeviceClass = class
 	device.Network = network
@@ -58,8 +58,8 @@ func (device Device) String() string {
 	body := new(bytes.Buffer)
 
 	// Id [optional]
-	if len(device.Id) != 0 {
-		body.WriteString(fmt.Sprintf("Id:%q, ", device.Id))
+	if len(device.ID) != 0 {
+		body.WriteString(fmt.Sprintf("ID:%q, ", device.ID))
 	}
 
 	// Name
@@ -93,8 +93,8 @@ func (device Device) String() string {
 	return fmt.Sprintf("Device{%s}", body)
 }
 
-// Assign fields from map.
+// FromMap assigns fields from map.
 // This method is used to assign already parsed JSON data.
 func (device *Device) FromMap(data interface{}) error {
-	return fromJsonMap(device, data)
+	return fromJSON(device, data)
 }

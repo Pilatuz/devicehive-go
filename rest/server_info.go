@@ -9,18 +9,18 @@ import (
 	"github.com/pilatuz/go-devicehive"
 )
 
-// GetServerInfo() function gets the main server's information.
+// GetServerInfo function gets the main server's information.
 func (service *Service) GetServerInfo(timeout time.Duration) (*devicehive.ServerInfo, error) {
+	var err error
 	task := newTask()
 	task.log().Debugf("[%s]: getting /info...", TAG)
 
 	// create request
-	var err error
-	url := *service.baseUrl
+	url := *service.baseURL
 	url.Path += "/info"
 	task.request, err = http.NewRequest("GET", url.String(), nil)
 	if err != nil {
-		task.log().Warnf("[%s]: failed to create /info request: %s", TAG, err)
+		task.log().WithError(err).Warnf("[%s]: failed to create /info request", TAG)
 		return nil, fmt.Errorf("failed to create /info request: %s", err)
 	}
 
@@ -30,12 +30,12 @@ func (service *Service) GetServerInfo(timeout time.Duration) (*devicehive.Server
 	select {
 	case <-time.After(timeout):
 		// TODO: task.request.Cancel // cancel request
-		task.log().Warnf("[%s]: failed to wait /info response: timed out (%s)", TAG, timeout)
+		task.log().WithField("timeout", timeout).Warnf("[%s]: failed to wait /info response: timed out", TAG)
 		return nil, fmt.Errorf("failed to wait /info response: timed out (%s)", timeout)
 
 	case err = <-service.doAsync(task):
 		if err != nil {
-			task.log().Warnf("[%s]: failed to get /info response: %s", TAG, err)
+			task.log().WithError(err).Warnf("[%s]: failed to get /info response", TAG)
 			return nil, fmt.Errorf("failed to get /info response: %s", err)
 		}
 	}
@@ -45,7 +45,7 @@ func (service *Service) GetServerInfo(timeout time.Duration) (*devicehive.Server
 
 	// check status code
 	if task.response.StatusCode != http.StatusOK {
-		task.log().Warnf("[%s]: unexpected /info status: %s", TAG, task.response.Status)
+		task.log().WithField("status", task.response.Status).Warnf("[%s]: unexpected /info status", TAG)
 		return nil, fmt.Errorf("unexpected /info status: %s", task.response.Status)
 	}
 
@@ -54,10 +54,10 @@ func (service *Service) GetServerInfo(timeout time.Duration) (*devicehive.Server
 	dec := json.NewDecoder(task.response.Body)
 	err = dec.Decode(info)
 	if err != nil {
-		task.log().Warnf("[%s]: failed to parse /info body: %s", TAG, err)
+		task.log().WithError(err).Warnf("[%s]: failed to parse /info body", TAG)
 		return nil, fmt.Errorf("failed to parse /info body: %s", err)
 	}
 
-	task.log().Infof("[%s]: parsed /info body: %s", TAG, info)
+	task.log().WithField("info", info).Infof("[%s]: parsed /info body", TAG)
 	return info, nil // OK
 }

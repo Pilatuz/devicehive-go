@@ -1,18 +1,17 @@
 package rest
 
 import (
-	"fmt"
 	"net/http"
 	"sync/atomic"
 )
 
 var (
-	taskId = uint64(0)
+	taskID = uint64(0) // unique identifier generator
 )
 
 // Asynchronous request/task.
 type asyncTask struct {
-	Identifier uint64
+	identifier uint64
 
 	request  *http.Request
 	response *http.Response
@@ -22,23 +21,22 @@ type asyncTask struct {
 // assigns new unique identifier
 func newTask() *asyncTask {
 	task := new(asyncTask)
-	task.Identifier = atomic.AddUint64(&taskId, 1)
+	task.identifier = atomic.AddUint64(&taskID, 1)
 	return task
 }
 
 // Do a request/task synchronously.
 func (service *Service) doSync(task *asyncTask) error {
-	task.log().Debugf("[%s]: sending: %s %s", TAG,
-		task.request.Method, task.request.URL)
+	task.log().WithField("url", task.request.URL).
+		Debugf("[%s]: sending %s request", TAG, task.request.Method)
 
 	var err error
 	task.response, err = service.client.Do(task.request)
 	if err != nil {
-		task.log().Debugf("[%s]: failed to do request: %s", TAG, err)
-		return fmt.Errorf("failed to do request: %s", err)
+		return err
 	}
 
-	task.log().Debugf("[%s]: got response status: %s", TAG, task.response.Status)
+	task.log().WithField("status", task.response.Status).Debugf("[%s]: got response", TAG)
 	return nil // OK
 }
 

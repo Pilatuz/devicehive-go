@@ -5,10 +5,10 @@ import (
 	"fmt"
 )
 
-// Represents notification object - a set of data sent from devices to DeviceHive.
+// Notification represents notification object - a set of data sent from devices to DeviceHive.
 type Notification struct {
 	// Unique identifier [do not change].
-	Id uint64 `json:"id,omitempty"`
+	ID uint64 `json:"id,omitempty"`
 
 	// Timestamp, UTC.
 	Timestamp string `json:"timestamp,omitempty"`
@@ -20,7 +20,7 @@ type Notification struct {
 	Parameters interface{} `json:"parameters,omitempty"`
 }
 
-// Notification listener is used to listen for asynchronous notifications.
+// NotificationListener is used to listen for asynchronous notifications.
 type NotificationListener struct {
 	// Channel to receive notifications
 	C chan *Notification
@@ -53,8 +53,8 @@ func (notification Notification) String() string {
 	body := new(bytes.Buffer)
 
 	// Id [optional]
-	if notification.Id != 0 {
-		body.WriteString(fmt.Sprintf("Id:%d, ", notification.Id))
+	if notification.ID != 0 {
+		body.WriteString(fmt.Sprintf("ID:%d, ", notification.ID))
 	}
 
 	// Name
@@ -73,8 +73,8 @@ func (notification Notification) String() string {
 	return fmt.Sprintf("Notification{%s}", body)
 }
 
-// Assign fields from map.
+// FromMap assigns fields from map.
 // This method is used to assign already parsed JSON data.
 func (notification *Notification) FromMap(data interface{}) error {
-	return fromJsonMap(notification, data)
+	return fromJSON(notification, data)
 }

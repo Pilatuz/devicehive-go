@@ -13,10 +13,10 @@ func TestServerInfoString(t *testing.T) {
 	info.Timestamp = "2005-10-22"
 	assert.Equal(t, info.String(), `ServerInfo{Version:"1.2.3", Timestamp:"2005-10-22"}`)
 
-	info.RestUrl, info.WebsocketUrl = "http://localhost/rest", ""
+	info.RestURL, info.WebsocketURL = "http://localhost/rest", ""
 	assert.Equal(t, info.String(), `ServerInfo{Version:"1.2.3", Timestamp:"2005-10-22", REST:"http://localhost/rest"}`)
 
-	info.RestUrl, info.WebsocketUrl = "", "http://localhost/ws"
+	info.RestURL, info.WebsocketURL = "", "http://localhost/ws"
 	assert.Equal(t, info.String(), `ServerInfo{Version:"1.2.3", Timestamp:"2005-10-22", WS:"http://localhost/ws"}`)
 }
 
@@ -27,10 +27,10 @@ func TestServerInfoJson(t *testing.T) {
 	info.Timestamp = "2005-10-22"
 	assert.JSONEq(t, toJsonStr(t, info), `{"apiVersion":"1.2.3", "serverTimestamp":"2005-10-22"}`)
 
-	info.RestUrl, info.WebsocketUrl = "http://localhost/rest", ""
+	info.RestURL, info.WebsocketURL = "http://localhost/rest", ""
 	assert.JSONEq(t, toJsonStr(t, info), `{"apiVersion":"1.2.3", "serverTimestamp":"2005-10-22", "restServerUrl":"http://localhost/rest"}`)
 
-	info.RestUrl, info.WebsocketUrl = "", "http://localhost/ws"
+	info.RestURL, info.WebsocketURL = "", "http://localhost/ws"
 	assert.JSONEq(t, toJsonStr(t, info), `{"apiVersion":"1.2.3", "serverTimestamp":"2005-10-22", "webSocketServerUrl":"http://localhost/ws"}`)
 }
 
