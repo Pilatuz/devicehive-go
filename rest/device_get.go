@@ -1,84 +1,36 @@
-// +build ignore
-
 package rest
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/pilatuz/go-devicehive"
 )
 
-// Prepare GetDevice task
-func (service *Service) prepareGetDevice(deviceId, deviceKey string) (task Task, err error) {
-	// create request
-	url := fmt.Sprintf("%s/device/%s", service.baseUrl, deviceId)
+// GetDevice gets the device data.
+func (service *Service) GetDevice(deviceID, deviceKey string, timeout time.Duration) (*devicehive.Device, error) {
+	// build URL
+	URL := *service.baseURL
+	URL.Path += fmt.Sprintf("/device/%s", deviceID)
 
-	task.request, err = http.NewRequest("GET", url, nil)
+	// result
+	var res map[string]interface{}
+	device := new(devicehive.Device)
+	device.ID = deviceID
+	device.Key = deviceKey
+
+	// do GET and check status is 200
+	task := newTask("GET", &URL, timeout)
+	task.deviceAuth = device
+	err := service.do200(task, "/device/get", nil, &res)
 	if err != nil {
-		log.Warnf("REST: failed to create /device/get request (error: %s)", err)
-		return
+		return nil, err
 	}
 
-	// authorization
-	service.prepareAuthorization(task.request,
-		&core.Device{Id: deviceId, Key: deviceKey})
-
-	return
-}
-
-// Process GetDevice task
-func (service *Service) processGetDevice(task Task, device *core.Device) (err error) {
-	// check task error first
-	if task.err != nil {
-		err = task.err
-		return
+	// convert map to device
+	if err := device.FromMap(res); err != nil {
+		return nil, err
 	}
 
-	// check status code
-	if task.response.StatusCode != http.StatusOK {
-		log.Warnf("REST: unexpected /device/get status %s",
-			task.response.Status)
-		err = fmt.Errorf("unexpected status: %s",
-			task.response.Status)
-		return
-	}
-
-	// unmarshal
-	err = json.Unmarshal(task.body, device)
-	if err != nil {
-		log.Warnf("REST: failed to parse /device/get body (error: %s)", err)
-		return
-	}
-
-	return
-}
-
-// GetDevice() function get the device data.
-func (service *Service) GetDevice(deviceId, deviceKey string, timeout time.Duration) (device *core.Device, err error) {
-	log.Tracef("REST: getting device %q...", deviceId)
-
-	task, err := service.prepareGetDevice(deviceId, deviceKey)
-	if err != nil {
-		log.Warnf("REST: failed to prepare /device/get task (error: %s)", err)
-		return
-	}
-
-	select {
-	case <-time.After(timeout):
-		log.Warnf("REST: failed to wait %s for /device/get task", timeout)
-		err = fmt.Errorf("timed out")
-
-	case task = <-service.doAsync(task):
-		device = &core.Device{Id: deviceId, Key: deviceKey}
-		err = service.processGetDevice(task, device)
-		if err != nil {
-			log.Warnf("REST: failed to process /device/get task (error: %s)", err)
-			return
-		}
-	}
-
-	return
+	return device, nil // OK
 }

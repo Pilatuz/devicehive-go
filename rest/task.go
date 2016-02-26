@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"sync/atomic"
 	"time"
+
+	"github.com/pilatuz/go-devicehive"
 )
 
 var (
@@ -19,6 +21,7 @@ var (
 type asyncTask struct {
 	identifier uint64
 	timeout    time.Duration
+	deviceAuth *devicehive.Device // is used for device authentication
 
 	method   string
 	URL      *url.URL
@@ -76,7 +79,7 @@ func (service *Service) do2xx(task *asyncTask, OP string, body interface{}, resu
 // send request and parse response
 func (service *Service) do(task *asyncTask, OP string, body interface{}, result interface{},
 	checkStatus func(status int) bool) (err error) {
-	task.log().WithField("url", task.URL).Debugf("[%s]: getting %s...", TAG, OP)
+	task.log().WithField("url", task.URL).Debugf("[%s]: doing %s...", TAG, OP)
 
 	// build request body
 	var requestBody io.Reader
@@ -107,7 +110,7 @@ func (service *Service) do(task *asyncTask, OP string, body interface{}, result 
 	}
 
 	// authorization
-	service.prepareAuthorization(task.request, nil)
+	service.prepareAuthorization(task.request, task.deviceAuth)
 
 	select {
 	case <-time.After(task.timeout):
@@ -132,7 +135,7 @@ func (service *Service) do(task *asyncTask, OP string, body interface{}, result 
 	}
 
 	// unmarshal
-	if result != nil {
+	if result != nil && task.response.StatusCode != http.StatusNoContent {
 		dec := json.NewDecoder(task.response.Body)
 		err = dec.Decode(result)
 		if err != nil {

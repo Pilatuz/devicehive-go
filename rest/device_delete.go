@@ -1,74 +1,25 @@
-// +build ignore
-
 package rest
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/pilatuz/go-devicehive"
 )
 
-// Prepare DeleteDevice task
-func (service *Service) prepareDeleteDevice(device *core.Device) (task Task, err error) {
-	// create request
-	url := fmt.Sprintf("%s/device/%s", service.baseUrl, device.Id)
-	task.request, err = http.NewRequest("DELETE", url, nil)
+// DeleteDevice deletes the device.
+func (service *Service) DeleteDevice(device *devicehive.Device, timeout time.Duration) error {
+	// build URL
+	URL := *service.baseURL
+	URL.Path += fmt.Sprintf("/device/%s", device.ID)
+
+	// do DELETE and check status is 2xx
+	task := newTask("DELETE", &URL, timeout)
+	task.deviceAuth = device
+	err := service.do2xx(task, "/device/delete", nil, nil)
 	if err != nil {
-		log.Warnf("REST: failed to create /device/delete request (error: %s)", err)
-		return
+		return err
 	}
 
-	// authorization
-	service.prepareAuthorization(task.request, device)
-
-	return
-}
-
-// Process DeleteDevice task
-func (service *Service) processDeleteDevice(task Task) (err error) {
-	// check task error first
-	if task.err != nil {
-		err = task.err
-		return
-	}
-
-	// check status code
-	if task.response.StatusCode < http.StatusOK ||
-		task.response.StatusCode > http.StatusPartialContent {
-		log.Warnf("REST: unexpected /device/delete status %s",
-			task.response.Status)
-		err = fmt.Errorf("unexpected status: %s",
-			task.response.Status)
-		return
-	}
-
-	return
-}
-
-// DeleteDevice() function deletes the device.
-func (service *Service) DeleteDevice(device *core.Device, timeout time.Duration) (err error) {
-	log.Debugf("REST: deleting device %q...", device.Id)
-
-	task, err := service.prepareDeleteDevice(device)
-	if err != nil {
-		log.Warnf("REST: failed to prepare /device/delete task (error: %s)", err)
-		return
-	}
-
-	select {
-	case <-time.After(timeout):
-		log.Warnf("REST: failed to wait %s for /device/delete task", timeout)
-		err = fmt.Errorf("timed out")
-
-	case task = <-service.doAsync(task):
-		err = service.processDeleteDevice(task)
-		if err != nil {
-			log.Warnf("REST: failed to process /device/delete task (error: %s)", err)
-			return
-		}
-	}
-
-	return
+	return nil // OK
 }
