@@ -16,7 +16,7 @@ func TestGetServerInfoOK(t *testing.T) {
 
 	info, err := service.GetServerInfo(testWaitTimeout)
 	assert.NoError(t, err, "Failed to get server info")
-	assert.NotNil(t, info, "No service info avaialble")
+	assert.NotNil(t, info, "No service info available")
 	assert.NotEmpty(t, info.Version, "No API version")
 	assert.NotEmpty(t, info.Timestamp, "No server timestamp")
 	// websocket URL might be empty

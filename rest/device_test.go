@@ -16,7 +16,7 @@ func TestDeviceListAndGet(t *testing.T) {
 
 	devices, err := service.GetDeviceList(0, 0, testWaitTimeout)
 	assert.NoError(t, err, "Failed to get list of devices")
-	// assert.NotEmpty(t, devices, "No any device avaialble")
+	// assert.NotEmpty(t, devices, "No any device available")
 	//	for i, d := range devices {
 	//		t.Logf("device-%d: %s", i, d)
 	//	}
@@ -24,7 +24,7 @@ func TestDeviceListAndGet(t *testing.T) {
 	for i, a := range devices {
 		b, err := service.GetDevice(a.ID, a.Key, testWaitTimeout)
 		assert.NoError(t, err, "Failed to get device")
-		assert.NotNil(t, b, "No device avaialble")
+		assert.NotNil(t, b, "No device available")
 		t.Logf("device-%d/A: %s", i, a)
 		t.Logf("device-%d/B: %s", i, b)
 		assert.JSONEq(t, toJsonStr(a), toJsonStr(b), "Devices are not the same")

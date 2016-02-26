@@ -15,9 +15,10 @@ func (service *Service) GetDevice(deviceID, deviceKey string, timeout time.Durat
 
 	// result
 	var res map[string]interface{}
-	device := new(devicehive.Device)
-	device.ID = deviceID
-	device.Key = deviceKey
+	device := &devicehive.Device{
+		ID:  deviceID,
+		Key: deviceKey,
+	}
 
 	// do GET and check status is 200
 	task := newTask("GET", &URL, timeout)

@@ -14,8 +14,9 @@ func (service *Service) GetNetwork(networkID uint64, timeout time.Duration) (*de
 	URL.Path += fmt.Sprintf("/network/%d", networkID)
 
 	// result
-	network := new(devicehive.Network)
-	network.ID = networkID
+	network := &devicehive.Network{
+		ID: networkID,
+	}
 
 	// do GET and check status is 200
 	task := newTask("GET", &URL, timeout)

@@ -16,7 +16,7 @@ func TestNetworkListAndGet(t *testing.T) {
 
 	networks, err := service.GetNetworkList(0, 0, testWaitTimeout)
 	assert.NoError(t, err, "Failed to get list of networks")
-	assert.NotEmpty(t, networks, "No any network avaialble")
+	assert.NotEmpty(t, networks, "No any network available")
 	//	for i, n := range networks {
 	//		t.Logf("network-%d: %s", i, n)
 	//	}
@@ -24,7 +24,7 @@ func TestNetworkListAndGet(t *testing.T) {
 	for i, a := range networks {
 		b, err := service.GetNetwork(a.ID, testWaitTimeout)
 		assert.NoError(t, err, "Failed to get network")
-		assert.NotNil(t, b, "No network avaialble")
+		assert.NotNil(t, b, "No network available")
 		t.Logf("network-%d/A: %s", i, a)
 		t.Logf("network-%d/B: %s", i, b)
 		assert.JSONEq(t, toJsonStr(a), toJsonStr(b), "Networks are not the same")
@@ -42,7 +42,7 @@ func TestNetworkUpdate(t *testing.T) {
 
 	networks, err := service.GetNetworkList(0, 0, testWaitTimeout)
 	assert.NoError(t, err, "Failed to get list of networks")
-	assert.NotEmpty(t, networks, "No any network avaialble")
+	assert.NotEmpty(t, networks, "No any network available")
 	// t.Logf("networks: %s", networks)
 
 	for _, a := range networks {
