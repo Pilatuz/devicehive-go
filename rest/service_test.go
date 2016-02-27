@@ -3,6 +3,7 @@ package rest
 import (
 	"encoding/json"
 	"flag"
+	"strings"
 	"testing"
 	"time"
 
@@ -52,4 +53,63 @@ func toJsonStr(v interface{}) string {
 		return "-" // bad JSON
 	}
 	return string(b)
+}
+
+// Test GetServerInfo method (invalid server address)
+func TestServiceBadAddress(t *testing.T) {
+	if len(testServerURL) == 0 {
+		return // nothing to test
+	}
+
+	service, err := NewService(strings.Replace(testServerURL, ".", "_", -1), "")
+	assert.NoError(t, err, "Failed to create service")
+	if assert.NotNil(t, service, "No service created") {
+		info, err := service.GetServerInfo()
+		assert.Error(t, err, `No "unknown host" expected error`)
+		assert.Nil(t, info, "No service info expected")
+	}
+}
+
+// Test GetServerInfo method (invalid path)
+func TestServiceBadPath(t *testing.T) {
+	if len(testServerURL) == 0 {
+		return // nothing to test
+	}
+
+	service, err := NewService(strings.Replace(testServerURL, "rest", "reZZZt", -1), "")
+	assert.NoError(t, err, "Failed to create service")
+	if assert.NotNil(t, service, "No service created") {
+		info, err := service.GetServerInfo()
+		assert.Error(t, err, `No "invalid path" expected error`)
+		assert.Nil(t, info, "No service info expected")
+	}
+}
+
+// Test service.Stop method
+func TestServiceStop(t *testing.T) {
+	service := testNewRest(t)
+	if service == nil {
+		return // nothing to test
+	}
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		service.Stop()
+	}()
+
+	N := 5
+	ch := make(chan int, N)
+	for i := 0; i < N; i++ {
+		go func(i int) {
+			info, err := service.GetServerInfo()
+			assert.Error(t, err, `No "stopped" expected error`)
+			assert.Nil(t, info, "No service info expected")
+			ch <- i
+		}(i)
+	}
+
+	// wait all
+	for i := 0; i < N; i++ {
+		<-ch
+	}
 }
