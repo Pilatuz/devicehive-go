@@ -3,13 +3,12 @@ package rest
 import (
 	"fmt"
 	"net/url"
-	"time"
 
-	"github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/go-devicehive"
 )
 
 // PollNotifications polls the notifications.
-func (service *Service) PollNotifications(device *devicehive.Device, timestamp, names, waitTimeout string, timeout time.Duration) ([]*devicehive.Notification, error) {
+func (service *Service) PollNotifications(device *dh.Device, timestamp, names, waitTimeout string) ([]*dh.Notification, error) {
 	// build URL
 	URL := *service.baseURL
 	URL.Path += fmt.Sprintf("/device/%s/notification/poll", device.ID)
@@ -26,10 +25,10 @@ func (service *Service) PollNotifications(device *devicehive.Device, timestamp, 
 	URL.RawQuery = query.Encode()
 
 	// result
-	var notifications []*devicehive.Notification
+	var notifications []*dh.Notification
 
 	// do GET and check status is 200
-	task := newTask("GET", &URL, timeout)
+	task := newTask("GET", &URL, service.DefaultTimeout)
 	task.deviceAuth = device
 	err := service.do200(task, "/notification/poll", nil, &notifications)
 	if err != nil {
@@ -37,9 +36,9 @@ func (service *Service) PollNotifications(device *devicehive.Device, timestamp, 
 	}
 
 	// convert map to notifications
-	//	notifications := make([]*devicehive.Notification, 0, len(res))
+	//	notifications := make([]*dh.Notification, 0, len(res))
 	//	for _, data := range res {
-	//		n := new(devicehive.Notification)
+	//		n := new(dh.Notification)
 	//		if err := n.FromMap(data); err != nil {
 	//			return nil, err
 	//		}

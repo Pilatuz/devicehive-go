@@ -5,9 +5,11 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync/atomic"
+	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/go-devicehive"
 )
 
 var (
@@ -16,6 +18,9 @@ var (
 
 	// TAG is a log prefix
 	TAG = "DH-REST"
+
+	// indicates stop
+	errorStopped = fmt.Errorf("stopped")
 )
 
 // Service is a REST service for devices (TODO: and for clients).
@@ -30,8 +35,15 @@ type Service struct {
 	client *http.Client
 
 	// set of command/notification listeners
-	commandListeners      map[string]*devicehive.CommandListener
-	notificationListeners map[string]*devicehive.NotificationListener
+	commandListeners      map[string]*dh.CommandListener
+	notificationListeners map[string]*dh.NotificationListener
+	PollRetryTimeout      time.Duration
+
+	stopped uint32
+	stop    chan interface{}
+
+	// default operation timeout
+	DefaultTimeout time.Duration
 }
 
 // Get string representation of a service.
@@ -41,9 +53,9 @@ func (service *Service) String() string {
 
 // NewService creates new service.
 func NewService(baseURL, accessKey string) (*Service, error) {
-	log.Debugf("[%s]: creating service url: %s", TAG, baseURL)
-	var err error
+	log.WithField("url", baseURL).Debugf("[%s]: creating service", TAG)
 
+	var err error
 	service := new(Service)
 	service.accessKey = accessKey
 
@@ -54,7 +66,7 @@ func NewService(baseURL, accessKey string) (*Service, error) {
 
 	// parse URL
 	if service.baseURL, err = url.Parse(baseURL); err != nil {
-		log.Warnf("[%s]: failed to parse URL: %s", TAG, err)
+		log.WithError(err).Warnf("[%s]: failed to parse URL", TAG)
 		return nil, fmt.Errorf("failed to parse URL: %s", err)
 	}
 
@@ -65,14 +77,54 @@ func NewService(baseURL, accessKey string) (*Service, error) {
 	// TODO: client.Timeout
 
 	// create empty set of listeners
-	service.commandListeners = make(map[string]*devicehive.CommandListener)
-	service.notificationListeners = make(map[string]*devicehive.NotificationListener)
+	service.PollRetryTimeout = 1 * time.Second
+	service.commandListeners = make(map[string]*dh.CommandListener)
+	service.notificationListeners = make(map[string]*dh.NotificationListener)
+
+	// create stop channel
+	service.stop = make(chan interface{})
+
+	// default timeout
+	service.DefaultTimeout = 60 * time.Second
 
 	return service, nil // OK
 }
 
+// Stop stops all active requests and polling loops
+func (service *Service) Stop() {
+	if atomic.CompareAndSwapUint32(&service.stopped, 0, 1) {
+		log.Infof("[%s]: stopping service", TAG)
+
+		// close channel
+		close(service.stop)
+
+		// clear all command listeners
+		for ID, listener := range service.commandListeners {
+			delete(service.commandListeners, ID)
+			close(listener.C)
+		}
+
+		// clear all notification listeners
+		for ID, listener := range service.notificationListeners {
+			delete(service.notificationListeners, ID)
+			close(listener.C)
+		}
+	}
+}
+
+// SetTimeout sets the default timeout
+func (service *Service) SetTimeout(timeout time.Duration) {
+	log.WithField("timeout", timeout).Infof("[%s]: default timeout changed", TAG)
+	service.DefaultTimeout = timeout
+}
+
+// check is the service stopped?
+func (service *Service) isStopped() bool {
+	return atomic.LoadUint32(&service.stopped) > 0
+}
+
 // Adds Authorization header if access key is not empty, device might be nil.
-func (service *Service) prepareAuthorization(request *http.Request, device *devicehive.Device) {
+func (service *Service) prepareAuthorization(request *http.Request, device *dh.Device) {
 	// access key
 	if len(service.accessKey) != 0 {
 		request.Header.Add("Authorization", "Bearer "+service.accessKey)

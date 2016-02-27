@@ -3,17 +3,17 @@ package rest
 import (
 	"time"
 
-	"github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/go-devicehive"
 )
 
 // SubscribeCommands adds a new command listener
-func (service *Service) SubscribeCommands(device *devicehive.Device, timestamp string, timeout time.Duration) (*devicehive.CommandListener, error) {
+func (service *Service) SubscribeCommands(device *dh.Device, timestamp string) (*dh.CommandListener, error) {
 	if listener, ok := service.commandListeners[device.ID]; ok {
 		return listener, nil // already exists
 	}
 
 	// install new
-	listener := devicehive.NewCommandListener(64)  // TODO: dedicated variable for buffer size
+	listener := dh.NewCommandListener(64)          // TODO: dedicated variable for buffer size
 	service.commandListeners[device.ID] = listener // TODO: use mutex here!
 
 	go func(deviceID string, timestamp string) {
@@ -22,17 +22,30 @@ func (service *Service) SubscribeCommands(device *devicehive.Device, timestamp s
 
 		for {
 			const names = ""
-			const wait = "30"
-			commands, err := service.PollCommands(device, timestamp, names, wait, 60*time.Second)
+			const wait = "30" // TODO: check wait < service.DefaultTimeout!
+			commands, err := service.PollCommands(device, timestamp, names, wait)
 			if err != nil {
+				if err == errorStopped {
+					// if service is stopped
+					// just stop polling
+					return
+				}
+
+				// sleep a while...
 				log.WithError(err).Warnf("[%s]: failed to poll commands", TAG)
-				// TODO: break? wait and try again?
-				time.Sleep(1 * time.Second) // sleep a while
+				select {
+				case <-time.After(service.PollRetryTimeout):
+					continue // ...and try again
+
+				case <-service.stop:
+					return // stop
+				}
 			}
 			if listener, ok := service.commandListeners[deviceID]; ok {
 				for _, command := range commands {
 					log.WithField("command", command).Infof("[%s]: new command received", TAG)
 					timestamp = command.Timestamp // continue with the latest command timestamp!
+					// TODO: check timestamp consistency!
 					listener.C <- command
 				}
 			} else {
@@ -45,21 +58,24 @@ func (service *Service) SubscribeCommands(device *devicehive.Device, timestamp s
 }
 
 // UnsubscribeCommands removes the command listener
-func (service *Service) UnsubscribeCommands(device *devicehive.Device, timeout time.Duration) error {
+func (service *Service) UnsubscribeCommands(device *dh.Device) error {
 	// TODO: use mutex here!
-	delete(service.commandListeners, device.ID) // poll loop will be stopped
+	if listener, ok := service.commandListeners[device.ID]; ok {
+		delete(service.commandListeners, device.ID) // poll loop will be stopped
+		close(listener.C)
+	}
 
 	return nil // OK
 }
 
 // SubscribeNotifications adds a new notification listener
-func (service *Service) SubscribeNotifications(device *devicehive.Device, timestamp string, timeout time.Duration) (*devicehive.NotificationListener, error) {
+func (service *Service) SubscribeNotifications(device *dh.Device, timestamp string) (*dh.NotificationListener, error) {
 	if listener, ok := service.notificationListeners[device.ID]; ok {
 		return listener, nil // already exists
 	}
 
 	// install new
-	listener := devicehive.NewNotificationListener(64)  // TODO: dedicated variable for buffer size
+	listener := dh.NewNotificationListener(64)          // TODO: dedicated variable for buffer size
 	service.notificationListeners[device.ID] = listener // TODO: use mutex here!
 
 	go func(deviceID string, timestamp string) {
@@ -68,17 +84,30 @@ func (service *Service) SubscribeNotifications(device *devicehive.Device, timest
 
 		for {
 			const names = ""
-			const wait = "30"
-			notifications, err := service.PollNotifications(device, timestamp, names, wait, 60*time.Second)
+			const wait = "30" // TODO: check wait < service.DefaultTimeout!
+			notifications, err := service.PollNotifications(device, timestamp, names, wait)
 			if err != nil {
+				if err == errorStopped {
+					// if service is stopped
+					// just stop polling
+					return
+				}
+
+				// sleep a while...
 				log.WithError(err).Warnf("[%s]: failed to poll notifications", TAG)
-				// TODO: break? wait and try again?
-				time.Sleep(1 * time.Second) // sleep a while
+				select {
+				case <-time.After(service.PollRetryTimeout):
+					continue // ...and try again
+
+				case <-service.stop:
+					return // stop
+				}
 			}
 			if listener, ok := service.notificationListeners[deviceID]; ok {
 				for _, notification := range notifications {
 					log.WithField("notification", notification).Infof("[%s]: new notification received", TAG)
 					timestamp = notification.Timestamp // continue with the latest notification timestamp!
+					// TODO: check timestamp consistency!
 					listener.C <- notification
 				}
 			} else {
@@ -91,9 +120,12 @@ func (service *Service) SubscribeNotifications(device *devicehive.Device, timest
 }
 
 // UnsubscribeNotifications removes the notification listener
-func (service *Service) UnsubscribeNotifications(device *devicehive.Device, timeout time.Duration) error {
+func (service *Service) UnsubscribeNotifications(device *dh.Device) error {
 	// TODO: use mutex here!
-	delete(service.notificationListeners, device.ID) // poll loop will be stopped
+	if listener, ok := service.notificationListeners[device.ID]; ok {
+		delete(service.notificationListeners, device.ID) // poll loop will be stopped
+		close(listener.C)
+	}
 
 	return nil // OK
 }

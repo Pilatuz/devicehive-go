@@ -3,13 +3,12 @@ package rest
 import (
 	"fmt"
 	"net/url"
-	"time"
 
-	"github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/go-devicehive"
 )
 
 // GetDeviceList get the device list.
-func (service *Service) GetDeviceList(take, skip int, timeout time.Duration) ([]*devicehive.Device, error) {
+func (service *Service) GetDeviceList(take, skip int) ([]*dh.Device, error) {
 	// build URL
 	URL := *service.baseURL
 	URL.Path += "/device"
@@ -26,16 +25,16 @@ func (service *Service) GetDeviceList(take, skip int, timeout time.Duration) ([]
 	var res []interface{}
 
 	// do GET and check status is 200
-	task := newTask("GET", &URL, timeout)
+	task := newTask("GET", &URL, service.DefaultTimeout)
 	err := service.do200(task, "/device/list", nil, &res)
 	if err != nil {
 		return nil, err
 	}
 
 	// convert map to devices
-	devices := make([]*devicehive.Device, 0, len(res))
+	devices := make([]*dh.Device, 0, len(res))
 	for _, data := range res {
-		d := new(devicehive.Device)
+		d := new(dh.Device)
 		if err := d.FromMap(data); err != nil {
 			return nil, err
 		}

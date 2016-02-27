@@ -3,7 +3,7 @@ package rest
 import (
 	"testing"
 
-	"github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/go-devicehive"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +14,7 @@ func TestDeviceListAndGet(t *testing.T) {
 		return // nothing to test
 	}
 
-	devices, err := service.GetDeviceList(0, 0, testWaitTimeout)
+	devices, err := service.GetDeviceList(0, 0)
 	assert.NoError(t, err, "Failed to get list of devices")
 	// assert.NotEmpty(t, devices, "No any device available")
 	//	for i, d := range devices {
@@ -22,7 +22,7 @@ func TestDeviceListAndGet(t *testing.T) {
 	//	}
 
 	for i, a := range devices {
-		b, err := service.GetDevice(a.ID, a.Key, testWaitTimeout)
+		b, err := service.GetDevice(a.ID, a.Key)
 		assert.NoError(t, err, "Failed to get device")
 		assert.NotNil(t, b, "No device available")
 		t.Logf("device-%d/A: %s", i, a)
@@ -38,17 +38,17 @@ func TestDeviceRegisterAndDelete(t *testing.T) {
 		return // nothing to test
 	}
 
-	device := devicehive.NewDevice("go-unit-test-device", "go test device",
-		devicehive.NewDeviceClass("go-test-deviceclass", "0.0.1"))
-	err := service.RegisterDevice(device, testWaitTimeout)
+	device := dh.NewDevice("go-unit-test-device", "go test device",
+		dh.NewDeviceClass("go-test-deviceclass", "0.0.1"))
+	err := service.RegisterDevice(device)
 	if assert.NoError(t, err, "Failed to register device") {
 		t.Logf("device registered: %s", device)
 
-		devices, err := service.GetDeviceList(0, 0, testWaitTimeout)
+		devices, err := service.GetDeviceList(0, 0)
 		assert.NoError(t, err, "Failed to get list of devices")
 		for _, d := range devices {
 			if d.ID == device.ID {
-				err = service.DeleteDevice(device, testWaitTimeout)
+				err = service.DeleteDevice(device)
 				assert.NoError(t, err, "Failed to delete device")
 				return // OK
 			}

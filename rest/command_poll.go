@@ -3,13 +3,12 @@ package rest
 import (
 	"fmt"
 	"net/url"
-	"time"
 
-	"github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/go-devicehive"
 )
 
 // PollCommands polls the commands.
-func (service *Service) PollCommands(device *devicehive.Device, timestamp, names, waitTimeout string, timeout time.Duration) ([]*devicehive.Command, error) {
+func (service *Service) PollCommands(device *dh.Device, timestamp, names, waitTimeout string) ([]*dh.Command, error) {
 	// build URL
 	URL := *service.baseURL
 	URL.Path += fmt.Sprintf("/device/%s/command/poll", device.ID)
@@ -26,10 +25,10 @@ func (service *Service) PollCommands(device *devicehive.Device, timestamp, names
 	URL.RawQuery = query.Encode()
 
 	// result
-	var commands []*devicehive.Command
+	var commands []*dh.Command
 
 	// do GET and check status is 200
-	task := newTask("GET", &URL, timeout)
+	task := newTask("GET", &URL, service.DefaultTimeout)
 	task.deviceAuth = device
 	err := service.do200(task, "/command/poll", nil, &commands)
 	if err != nil {
@@ -37,9 +36,9 @@ func (service *Service) PollCommands(device *devicehive.Device, timestamp, names
 	}
 
 	// convert map to commands
-	//	commands := make([]*devicehive.Command, 0, len(res))
+	//	commands := make([]*dh.Command, 0, len(res))
 	//	for _, data := range res {
-	//		c := new(devicehive.Command)
+	//		c := new(dh.Command)
 	//		if err := c.FromMap(data); err != nil {
 	//			return nil, err
 	//		}

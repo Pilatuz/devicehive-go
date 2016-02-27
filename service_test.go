@@ -207,21 +207,6 @@ func testCheckRegisterDevice1(t *testing.T, service Service, device core.Device,
 	}
 }
 
-// check the GetDevice method
-func testCheckGetDevice(t *testing.T, service Service, device core.Device) {
-	if service == nil {
-		return // do nothing
-	}
-
-	device2, err := service.GetDevice(device.Id, device.Key, testWaitTimeout)
-	if err != nil {
-		t.Errorf("Failed to get device (error: %s)", err)
-		return
-	}
-
-	_ = device2 // TODO: compare device and device2
-}
-
 // check the RegisterDevice method
 func testCheckRegisterDevice(t *testing.T, service Service, device core.Device, suffix string) {
 	if service == nil {
@@ -283,8 +268,6 @@ func TestRegisterDevice1(t *testing.T) {
 	//		// ignore possible errors
 	//	}
 }
-
-// TODO: TestPollCommand
 
 type TimeStat struct {
 	min   time.Duration
@@ -427,31 +410,6 @@ func TestBatchCommandInsert(t *testing.T) {
 
 	log.Infof("insert time: %s", ins)
 	log.Infof(" round trip: %s", rtt)
-}
-
-// check InsertNotification method
-// device should be already registered
-func testCheckInsertNotification(t *testing.T, service Service, device *core.Device, notification core.Notification) {
-	if service == nil {
-		return // do nothing
-	}
-
-	err := service.InsertNotification(device, &notification, testWaitTimeout)
-	if err != nil {
-		t.Errorf("Failed to insert notification (error: %s)", err)
-		return
-	}
-	//t.Logf("notification: %s", notification)
-
-	notification2, err := service.GetNotification(device, notification.Id, testWaitTimeout)
-	if err != nil {
-		t.Errorf("Failed to get notification (error: %s)", err)
-		return
-	}
-	//t.Logf("notification: %s", notification)
-
-	// TODO: compare notification & notification2
-	_ = notification2
 }
 
 // Test InsertNotification method

@@ -14,14 +14,14 @@ func TestGetServerInfoOK(t *testing.T) {
 		return // nothing to test
 	}
 
-	info, err := service.GetServerInfo(testWaitTimeout)
+	info, err := service.GetServerInfo()
 	assert.NoError(t, err, "Failed to get server info")
-	assert.NotNil(t, info, "No service info available")
-	assert.NotEmpty(t, info.Version, "No API version")
-	assert.NotEmpty(t, info.Timestamp, "No server timestamp")
-	// websocket URL might be empty
-
-	// t.Logf("server info: %s", info)
+	if assert.NotNil(t, info, "No service info available") {
+		assert.NotEmpty(t, info.Version, "No API version")
+		assert.NotEmpty(t, info.Timestamp, "No server timestamp")
+		// websocket URL might be empty
+		// t.Logf("server info: %s", info)
+	}
 }
 
 // Test GetServerInfo method (invalid server address)
@@ -31,11 +31,9 @@ func TestGetServerInfoBadAddress(t *testing.T) {
 	}
 
 	service, err := NewService(strings.Replace(testServerURL, ".", "_", -1), "")
-	ok := assert.NoError(t, err, "Failed to create service") &&
-		assert.NotNil(t, service, "No service created")
-
-	if ok {
-		info, err := service.GetServerInfo(testWaitTimeout)
+	assert.NoError(t, err, "Failed to create service")
+	if assert.NotNil(t, service, "No service created") {
+		info, err := service.GetServerInfo()
 		assert.Error(t, err, `No "unknown host" expected error`)
 		assert.Nil(t, info, "No service info expected")
 	}
@@ -48,11 +46,9 @@ func TestGetServerInfoBadPath(t *testing.T) {
 	}
 
 	service, err := NewService(strings.Replace(testServerURL, "rest", "reZZZt", -1), "")
-	ok := assert.NoError(t, err, "Failed to create service") &&
-		assert.NotNil(t, service, "No service created")
-
-	if ok {
-		info, err := service.GetServerInfo(testWaitTimeout)
+	assert.NoError(t, err, "Failed to create service")
+	if assert.NotNil(t, service, "No service created") {
+		info, err := service.GetServerInfo()
 		assert.Error(t, err, `No "invalid path" expected error`)
 		assert.Nil(t, info, "No service info expected")
 	}

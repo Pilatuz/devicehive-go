@@ -3,7 +3,7 @@ package rest
 import (
 	"testing"
 
-	"github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/go-devicehive"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,28 +14,28 @@ func TestCommandInsertAndUpdate(t *testing.T) {
 		return // nothing to test
 	}
 
-	devices, err := service.GetDeviceList(0, 0, testWaitTimeout)
+	devices, err := service.GetDeviceList(0, 0)
 	assert.NoError(t, err, "Failed to get list of devices")
 	assert.NotEmpty(t, devices, "No any device available")
 
 	for i, device := range devices {
 		t.Logf("device-%d: %s", i, device)
 
-		command := devicehive.NewCommand("go-test-command", i)
-		err := service.InsertCommand(device, command, testWaitTimeout)
+		command := dh.NewCommand("go-test-command", i)
+		err := service.InsertCommand(device, command)
 		assert.NoError(t, err, "Failed to insert command")
 		t.Logf("command-A: %s", command)
 
-		command, err = service.GetCommand(device, command.ID, testWaitTimeout)
+		command, err = service.GetCommand(device, command.ID)
 		assert.NoError(t, err, "Failed to get command")
 		t.Logf("command-B: %s", command)
 
-		command = devicehive.NewCommandResult(command.ID, "OK", i)
-		service.UpdateCommand(device, command, testWaitTimeout)
+		command = dh.NewCommandResult(command.ID, "OK", i)
+		service.UpdateCommand(device, command)
 		assert.NoError(t, err, "Failed to update command")
 		t.Logf("command-C: %s", command)
 
-		command, err = service.GetCommand(device, command.ID, testWaitTimeout)
+		command, err = service.GetCommand(device, command.ID)
 		assert.NoError(t, err, "Failed to get command")
 		t.Logf("command-D: %s", command)
 	}
@@ -48,11 +48,11 @@ func TestCommandInsertAndPoll(t *testing.T) {
 		return // nothing to test
 	}
 
-	info, err := service.GetServerInfo(testWaitTimeout)
+	info, err := service.GetServerInfo()
 	assert.NoError(t, err, "Failed to get server info")
 	assert.NotEmpty(t, info.Timestamp, "No server timestamp avaialble")
 
-	devices, err := service.GetDeviceList(0, 0, testWaitTimeout)
+	devices, err := service.GetDeviceList(0, 0)
 	assert.NoError(t, err, "Failed to get list of devices")
 	assert.NotEmpty(t, devices, "No any device available")
 
@@ -61,12 +61,12 @@ func TestCommandInsertAndPoll(t *testing.T) {
 	for i, device := range devices {
 		t.Logf("device-%d: %s", i, device)
 
-		command := devicehive.NewCommand("go-test-command", i)
-		err := service.InsertCommand(device, command, testWaitTimeout)
+		command := dh.NewCommand("go-test-command", i)
+		err := service.InsertCommand(device, command)
 		assert.NoError(t, err, "Failed to insert command")
 		t.Logf("sent command: %s", command)
 
-		commands, err := service.PollCommands(device, info.Timestamp, "", "", testWaitTimeout)
+		commands, err := service.PollCommands(device, info.Timestamp, "", "")
 		assert.NoError(t, err, "Failed to poll commands")
 		assert.NotEmpty(t, commands, "No any commands polled")
 
@@ -88,11 +88,11 @@ func TestCommandInsertAndSubscribe(t *testing.T) {
 		return // nothing to test
 	}
 
-	info, err := service.GetServerInfo(testWaitTimeout)
+	info, err := service.GetServerInfo()
 	assert.NoError(t, err, "Failed to get server info")
 	assert.NotEmpty(t, info.Timestamp, "No server timestamp avaialble")
 
-	devices, err := service.GetDeviceList(0, 0, testWaitTimeout)
+	devices, err := service.GetDeviceList(0, 0)
 	assert.NoError(t, err, "Failed to get list of devices")
 	assert.NotEmpty(t, devices, "No any device available")
 
@@ -101,16 +101,16 @@ func TestCommandInsertAndSubscribe(t *testing.T) {
 	for i, device := range devices {
 		// t.Logf("device-%d: %s", i, device)
 
-		listener, err := service.SubscribeCommands(device, info.Timestamp, testWaitTimeout)
+		listener, err := service.SubscribeCommands(device, info.Timestamp)
 		assert.NoError(t, err, "Failed to subscribe commands")
 		assert.NotNil(t, listener, "No command listener available")
 		defer func() {
-			err := service.UnsubscribeCommands(device, testWaitTimeout)
+			err := service.UnsubscribeCommands(device)
 			assert.NoError(t, err, "Failed to unsubscribe commands")
 		}()
 
-		a := devicehive.NewCommand("go-test-command", i)
-		err = service.InsertCommand(device, a, testWaitTimeout)
+		a := dh.NewCommand("go-test-command", i)
+		err = service.InsertCommand(device, a)
 		assert.NoError(t, err, "Failed to insert command")
 
 		b := <-listener.C // wait for command polled

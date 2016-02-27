@@ -3,7 +3,7 @@ package rest
 import (
 	"testing"
 
-	"github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/go-devicehive"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +14,7 @@ func TestNetworkListAndGet(t *testing.T) {
 		return // nothing to test
 	}
 
-	networks, err := service.GetNetworkList(0, 0, testWaitTimeout)
+	networks, err := service.GetNetworkList(0, 0)
 	assert.NoError(t, err, "Failed to get list of networks")
 	assert.NotEmpty(t, networks, "No any network available")
 	//	for i, n := range networks {
@@ -22,7 +22,7 @@ func TestNetworkListAndGet(t *testing.T) {
 	//	}
 
 	for i, a := range networks {
-		b, err := service.GetNetwork(a.ID, testWaitTimeout)
+		b, err := service.GetNetwork(a.ID)
 		assert.NoError(t, err, "Failed to get network")
 		assert.NotNil(t, b, "No network available")
 		t.Logf("network-%d/A: %s", i, a)
@@ -40,14 +40,14 @@ func TestNetworkUpdate(t *testing.T) {
 		return // nothing to test
 	}
 
-	networks, err := service.GetNetworkList(0, 0, testWaitTimeout)
+	networks, err := service.GetNetworkList(0, 0)
 	assert.NoError(t, err, "Failed to get list of networks")
 	assert.NotEmpty(t, networks, "No any network available")
 	// t.Logf("networks: %s", networks)
 
 	for _, a := range networks {
 		a.Description += "-updated"
-		err := service.UpdateNetwork(a, testWaitTimeout)
+		err := service.UpdateNetwork(a)
 		assert.NoError(t, err, "Failed to update network")
 	}
 }
@@ -61,11 +61,11 @@ func TestNetworkInsertAndDelete(t *testing.T) {
 		return // nothing to test
 	}
 
-	network := devicehive.NewNetwork("test-net", "no-secure-key")
-	err := service.InsertNetwork(network, testWaitTimeout)
+	network := dh.NewNetwork("test-net", "no-secure-key")
+	err := service.InsertNetwork(network)
 	assert.NoError(t, err, "Failed to insert network")
 	assert.NotEmpty(t, network.ID, "No network identifier provided")
 
-	err = service.DeleteNetwork(network, testWaitTimeout)
+	err = service.DeleteNetwork(network)
 	assert.NoError(t, err, "Failed to delete network")
 }

@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/go-devicehive"
 )
 
 var (
@@ -21,7 +21,7 @@ var (
 type asyncTask struct {
 	identifier uint64
 	timeout    time.Duration
-	deviceAuth *devicehive.Device // is used for device authentication
+	deviceAuth *dh.Device // is used for device authentication
 
 	method   string
 	URL      *url.URL
@@ -79,6 +79,11 @@ func (service *Service) do2xx(task *asyncTask, OP string, body interface{}, resu
 // send request and parse response
 func (service *Service) do(task *asyncTask, OP string, body interface{}, result interface{},
 	checkStatus func(status int) bool) (err error) {
+	// do nothing if service is stopped
+	if service.isStopped() {
+		return errorStopped
+	}
+
 	task.log().WithField("url", task.URL).Debugf("[%s]: doing %s...", TAG, OP)
 
 	// build request body
@@ -117,6 +122,10 @@ func (service *Service) do(task *asyncTask, OP string, body interface{}, result 
 		// TODO: task.request.Cancel // cancel request
 		task.log().WithField("timeout", task.timeout).Warnf("[%s]: failed to wait %s response: timed out", TAG, OP)
 		return fmt.Errorf("failed to wait %s response: timed out (%s)", OP, task.timeout)
+
+	case <-service.stop:
+		task.log().Warnf("[%s]: %s stopped", TAG, OP)
+		return errorStopped
 
 	case err = <-service.doAsync(task):
 		if err != nil {

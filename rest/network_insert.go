@@ -1,13 +1,11 @@
 package rest
 
 import (
-	"time"
-
-	"github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/go-devicehive"
 )
 
 // InsertNetwork inserts new network.
-func (service *Service) InsertNetwork(network *devicehive.Network, timeout time.Duration) error {
+func (service *Service) InsertNetwork(network *dh.Network) error {
 	// build URL
 	URL := *service.baseURL
 	URL.Path += "/network"
@@ -17,7 +15,7 @@ func (service *Service) InsertNetwork(network *devicehive.Network, timeout time.
 	body.ID = 0      // do not put ID to the request body
 
 	// do POST and check status is 2xx
-	task := newTask("POST", &URL, timeout)
+	task := newTask("POST", &URL, service.DefaultTimeout)
 	err := service.do2xx(task, "/network/insert", &body, network)
 	if err != nil {
 		return err

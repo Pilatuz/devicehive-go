@@ -3,13 +3,12 @@ package rest
 import (
 	"fmt"
 	"net/url"
-	"time"
 
-	"github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/go-devicehive"
 )
 
 // GetNetworkList gets the list of networks.
-func (service *Service) GetNetworkList(take, skip int, timeout time.Duration) ([]*devicehive.Network, error) {
+func (service *Service) GetNetworkList(take, skip int) ([]*dh.Network, error) {
 	// build URL
 	URL := *service.baseURL
 	URL.Path += "/network"
@@ -23,10 +22,10 @@ func (service *Service) GetNetworkList(take, skip int, timeout time.Duration) ([
 	URL.RawQuery = query.Encode()
 
 	// result
-	var networks []*devicehive.Network
+	var networks []*dh.Network
 
 	// do GET and check status is 200
-	task := newTask("GET", &URL, timeout)
+	task := newTask("GET", &URL, service.DefaultTimeout)
 	err := service.do200(task, "/network/list", nil, &networks)
 	if err != nil {
 		return nil, err

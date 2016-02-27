@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	dh "github.com/pilatuz/go-devicehive"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +35,12 @@ func testNewRest(t *testing.T) *Service {
 
 	service, err := NewService(testServerURL, testAccessKey)
 	assert.NoError(t, err, "Failed to create REST service")
-	assert.NotNil(t, service, "No service created")
+	if assert.NotNil(t, service, "No service created") {
+		service.SetTimeout(testWaitTimeout)
+
+		// check DeviceService is implemented
+		_ = dh.DeviceService(service)
+	}
 	return service
 }
 

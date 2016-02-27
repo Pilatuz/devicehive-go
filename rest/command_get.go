@@ -2,24 +2,23 @@ package rest
 
 import (
 	"fmt"
-	"time"
 
-	"github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/go-devicehive"
 )
 
 // GetCommand gets the command data.
-func (service *Service) GetCommand(device *devicehive.Device, commandID uint64, timeout time.Duration) (*devicehive.Command, error) {
+func (service *Service) GetCommand(device *dh.Device, commandID uint64) (*dh.Command, error) {
 	// build URL
 	URL := *service.baseURL
 	URL.Path += fmt.Sprintf("/device/%s/command/%d", device.ID, commandID)
 
 	// result
-	command := &devicehive.Command{
+	command := &dh.Command{
 		ID: commandID,
 	}
 
 	// do GET and check status is 200
-	task := newTask("GET", &URL, timeout)
+	task := newTask("GET", &URL, service.DefaultTimeout)
 	task.deviceAuth = device
 	err := service.do200(task, "/command/get", nil, command)
 	if err != nil {
