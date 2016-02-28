@@ -90,9 +90,19 @@ func (service *Service) String() string {
 	return fmt.Sprintf("WebsocketService{url:%q}", service.baseURL)
 }
 
-// NewService creates new Websocket /device service.
-func NewService(baseUrl, accessKey string) (*Service, error) {
-	log.WithField("url", baseUrl).Debugf("[%s]: creating service", TAG)
+// NewDeviceService creates new Websocket /device service.
+func NewDeviceService(baseUrl, accessKey string) (*Service, error) {
+	return newService(baseUrl, accessKey, "/device")
+}
+
+// NewClientService creates new Websocket service.
+func NewClientService(baseUrl, accessKey string) (*Service, error) {
+	return newService(baseUrl, accessKey, "/client")
+}
+
+// newService creates new Websocket service.
+func newService(baseUrl, accessKey string, path string) (*Service, error) {
+	log.WithField("url", baseUrl).Debugf("[%s]: creating %s service", TAG, path)
 
 	var err error
 	service := new(Service)
@@ -109,9 +119,8 @@ func NewService(baseUrl, accessKey string) (*Service, error) {
 		return nil, fmt.Errorf("failed to parse URL: %s", err)
 	}
 
-	// connect to /device endpoint
-	service.baseURL.Path += "/device"
-	// TODO: /client endpoint
+	// connect to /device or /client endpoint
+	service.baseURL.Path += path
 	headers := http.Header{}
 	headers.Add("Origin", "http://localhost/")
 	if len(service.accessKey) != 0 {
@@ -374,7 +383,7 @@ func (service *Service) handleMessage(data map[string]interface{}) {
 
 	// asynchronous actions
 	switch msg.Action {
-	case "command/insert":
+	case "command/insert", "command/update":
 		if listener := service.findCommandListener(msg.DeviceID); listener != nil {
 			command := new(dh.Command)
 			err := command.FromMap(data["command"])
@@ -385,6 +394,18 @@ func (service *Service) handleMessage(data map[string]interface{}) {
 			listener.C <- command
 		} else {
 			log.WithField("deviceId", msg.DeviceID).Warnf("[%s]: no command listener installed, ignored", TAG)
+		}
+	case "notification/insert":
+		if listener := service.findNotificationListener(msg.DeviceID); listener != nil {
+			notification := new(dh.Notification)
+			err := notification.FromMap(data["notification"])
+			if err != nil {
+				log.WithError(err).Warnf("[%s]: failed to parse %q body, ignored", TAG, msg.Action)
+				return
+			}
+			listener.C <- notification
+		} else {
+			log.WithField("deviceId", msg.DeviceID).Warnf("[%s]: no notification listener installed, ignored", TAG)
 		}
 	default:
 		log.WithField("action", msg.Action).Warnf("[%s]: unknown action received, ignored", TAG)

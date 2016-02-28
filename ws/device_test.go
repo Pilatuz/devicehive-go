@@ -8,7 +8,7 @@ import (
 
 // Test RegisterDevice and GetDevice methods
 func TestDeviceRegisterAndGet(t *testing.T) {
-	service := testNewWS(t)
+	service := testNewWsDevice(t)
 	if service == nil {
 		return // nothing to test
 	}

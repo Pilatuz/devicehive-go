@@ -121,6 +121,5 @@ func TestCommandInsertAndSubscribe(t *testing.T) {
 		b := <-listener.C // wait for command polled
 		assert.NotNil(t, b, "No any commands polled")
 		assert.JSONEq(t, toJsonStr(a), toJsonStr(b), "unexpected command polled")
-		return
 	}
 }

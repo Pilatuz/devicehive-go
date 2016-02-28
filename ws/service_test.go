@@ -66,19 +66,37 @@ func testNewNetwork() *dh.Network {
 	return nil
 }
 
-// creates new WS service
-func testNewWS(t *testing.T) *Service {
+// creates new WS /device service
+func testNewWsDevice(t *testing.T) *Service {
 	if len(testServerURL) == 0 {
 		return nil
 	}
 
-	service, err := NewService(testServerURL, testAccessKey)
-	assert.NoError(t, err, "Failed to create REST service")
+	service, err := NewDeviceService(testServerURL, testAccessKey)
+	assert.NoError(t, err, "Failed to create WS device service")
 	if assert.NotNil(t, service, "No service created") {
 		service.SetTimeout(testWaitTimeout)
 
 		// check DeviceService is implemented
 		// TODO: _ = dh.DeviceService(service)
+	}
+
+	return service
+}
+
+// creates new WS /client service
+func testNewWsClient(t *testing.T) *Service {
+	if len(testServerURL) == 0 {
+		return nil
+	}
+
+	service, err := NewClientService(testServerURL, testAccessKey)
+	assert.NoError(t, err, "Failed to create WS client service")
+	if assert.NotNil(t, service, "No service created") {
+		service.SetTimeout(testWaitTimeout)
+
+		// check ClientService is implemented
+		// TODO: _ = dh.ClientService(service)
 	}
 
 	return service
@@ -100,7 +118,7 @@ func TestServiceBadAddress(t *testing.T) {
 		return // nothing to test
 	}
 
-	service, err := NewService(strings.Replace(testServerURL, ".", "_", -1), "")
+	service, err := NewDeviceService(strings.Replace(testServerURL, ".", "_", -1), "")
 	assert.Error(t, err, `No "unknown host" expected error`)
 	assert.Nil(t, service, "No service expected")
 }
@@ -111,14 +129,14 @@ func TestServiceBadPath(t *testing.T) {
 		return // nothing to test
 	}
 
-	service, err := NewService(strings.Replace(testServerURL, "websocket", "webZZZocket", -1), "")
+	service, err := NewDeviceService(strings.Replace(testServerURL, "websocket", "webZZZocket", -1), "")
 	assert.Error(t, err, `No "invalid path" expected error`)
 	assert.Nil(t, service, "No service expected")
 }
 
 // Test service.Stop method
 func TestServiceStop(t *testing.T) {
-	service := testNewWS(t)
+	service := testNewWsDevice(t)
 	if service == nil {
 		return // nothing to test
 	}

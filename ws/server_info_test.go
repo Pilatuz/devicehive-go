@@ -8,7 +8,7 @@ import (
 
 // Test GetServerInfo method
 func TestServerInfo(t *testing.T) {
-	service := testNewWS(t)
+	service := testNewWsDevice(t)
 	if service == nil {
 		return // nothing to test
 	}
