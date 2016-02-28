@@ -2,70 +2,41 @@ package ws
 
 import (
 	"fmt"
-	"github.com/devicehive/devicehive-go/devicehive/core"
-	"github.com/devicehive/devicehive-go/devicehive/log"
-	"time"
+
+	dh "github.com/pilatuz/go-devicehive"
 )
 
-// Prepare InsertNotification task
-func (service *Service) prepareInsertNotification(device *core.Device, notification *core.Notification) (task *Task, err error) {
-	task = service.newTask()
+// InsertNotification() function inserts the notification.
+func (service *Service) InsertNotification(device *dh.Device, notification *dh.Notification) error {
+	const OP = "notification/insert"
+
+	// request data (do not put all fields)
+	data := &dh.Notification{
+		Name:       notification.Name,
+		Parameters: notification.Parameters,
+	}
+
+	task := service.newTask(service.DefaultTimeout)
 	task.dataToSend = map[string]interface{}{
-		"action":    "notification/insert",
-		"requestId": task.id}
+		"action":       "notification/insert",
+		"requestId":    task.identifier,
+		"notification": data,
+	}
 
 	// prepare authorization
 	task.prepareAuthorization(device)
 
-	ntf_data := core.Notification{Name: notification.Name,
-		Parameters: notification.Parameters}
-	task.dataToSend["notification"] = ntf_data
-
-	return
-}
-
-// Process InsertNotification task
-func (service *Service) processInsertNotification(task *Task, notification *core.Notification) (err error) {
-	// check response status
-	err = task.CheckStatus()
+	err := service.do(task, OP)
 	if err != nil {
-		log.Warnf("WS: bad /notification/insert status (error: %s)", err)
-		return
+		return err
 	}
 
 	// parse response
-	err = notification.AssignJSON(task.dataRecved["notification"])
+	err = notification.FromMap(task.dataReceived["notification"])
 	if err != nil {
-		log.Warnf("WS: failed to parse /notification/insert response (error: %s)", err)
-		return
+		task.log().WithError(err).Warnf("[%s]: failed to parse %s response", TAG, OP)
+		return fmt.Errorf("failed to parse %s response: %s", OP, err)
 	}
 
-	return
-}
-
-// InsertNotification() function inserts the notification.
-func (service *Service) InsertNotification(device *core.Device, notification *core.Notification, timeout time.Duration) (err error) {
-	task, err := service.prepareInsertNotification(device, notification)
-	if err != nil {
-		log.Warnf("WS: failed to prepare /notification/insert task (error: %s)", err)
-		return
-	}
-
-	// add to the TX pipeline
-	service.tx <- task
-
-	select {
-	case <-time.After(timeout):
-		log.Warnf("WS: failed to wait %s for /notification/insert task", timeout)
-		err = fmt.Errorf("timed out")
-
-	case <-task.done:
-		err = service.processInsertNotification(task, notification)
-		if err != nil {
-			log.Warnf("WS: failed to process /notification/insert task (error: %s)", err)
-			return
-		}
-	}
-
-	return
+	return nil // OK
 }
