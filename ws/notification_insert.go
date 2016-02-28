@@ -8,7 +8,7 @@ import (
 
 // InsertNotification() function inserts the notification.
 func (service *Service) InsertNotification(device *dh.Device, notification *dh.Notification) error {
-	const OP = "notification/insert"
+	const OP = "/notification/insert"
 
 	// request data (do not put all fields)
 	data := &dh.Notification{

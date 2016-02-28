@@ -6,20 +6,17 @@ import (
 
 // Authenticate authenticates the device.
 func (service *Service) Authenticate(device *dh.Device) error {
-	const OP = "/authenticate"
-
-	// Prepare Authenticate task
 	task := service.newTask(service.DefaultTimeout)
 	task.dataToSend = map[string]interface{}{
 		"action":    "authenticate",
-		"accessKey": service.accessKey,
 		"requestId": task.identifier,
+		"accessKey": service.accessKey,
 	}
 
 	// prepare authorization
 	task.prepareAuthorization(device)
 
-	err := service.do(task, OP)
+	err := service.do(task, "/authenticate")
 	if err != nil {
 		return err
 	}

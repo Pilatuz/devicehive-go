@@ -1,18 +1,20 @@
 package ws
 
 import (
-	"fmt"
-	"github.com/devicehive/devicehive-go/devicehive/core"
-	"github.com/devicehive/devicehive-go/devicehive/log"
-	"time"
+	dh "github.com/pilatuz/go-devicehive"
 )
 
-// Prepare SubscribeCommand task
-func (service *Service) prepareSubscribeCommand(device *core.Device, timestamp string) (task *Task, err error) {
-	task = service.newTask()
+// SubscribeCommand starts listening for the commands.
+func (service *Service) SubscribeCommands(device *dh.Device, timestamp string) (*dh.CommandListener, error) {
+	if listener := service.findCommandListener(device.ID); listener != nil {
+		return listener, nil // already exists
+	}
+
+	task := service.newTask(service.DefaultTimeout)
 	task.dataToSend = map[string]interface{}{
 		"action":    "command/subscribe",
-		"requestId": task.id}
+		"requestId": task.identifier,
+	}
 
 	// timestamp [optional]
 	if len(timestamp) != 0 {
@@ -22,48 +24,14 @@ func (service *Service) prepareSubscribeCommand(device *core.Device, timestamp s
 	// prepare authorization
 	task.prepareAuthorization(device)
 
-	return
-}
-
-// Process SubscribeCommand task
-func (service *Service) processSubscribeCommand(task *Task) (err error) {
-	// check response status
-	err = task.CheckStatus()
+	err := service.do(task, "/command/subscribe")
 	if err != nil {
-		log.Warnf("WS: bad /command/subscribe status (error: %s)", err)
-		return
+		return nil, err
 	}
 
-	return
-}
+	// create listener
+	listener := dh.NewCommandListener(64) // TODO: dedicated variable for buffer size
+	service.insertCommandListener(device.ID, listener)
 
-// SubscribeCommand() function updates the command.
-func (service *Service) SubscribeCommands(device *core.Device, timestamp string, timeout time.Duration) (listener *core.CommandListener, err error) {
-	task, err := service.prepareSubscribeCommand(device, timestamp)
-	if err != nil {
-		log.Warnf("WS: failed to prepare /command/subscribe task (error: %s)", err)
-		return
-	}
-
-	// add to the TX pipeline
-	service.tx <- task
-
-	select {
-	case <-time.After(timeout):
-		log.Warnf("WS: failed to wait %s for /command/subscribe task", timeout)
-		err = fmt.Errorf("timed out")
-
-	case <-task.done:
-		err = service.processSubscribeCommand(task)
-		if err != nil {
-			log.Warnf("WS: failed to process /command/subscribe task (error: %s)", err)
-			return
-		}
-
-		// done, create listener
-		listener = core.NewCommandListener()
-		service.insertCommandListener(device.Id, listener)
-	}
-
-	return
+	return listener, nil // OK
 }

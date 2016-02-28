@@ -8,6 +8,7 @@ import (
 func (service *Service) RegisterDevice(device *dh.Device) error {
 	const OP = "/device/register"
 
+	// request data (do not put all fields)
 	data := *device // deep copy
 	data.ID = ""    // do not put Id inside
 
