@@ -97,7 +97,7 @@ func TestServiceStop(t *testing.T) {
 		service.Stop()
 	}()
 
-	N := 5
+	N := 5 // requests at the same time
 	ch := make(chan int, N)
 	for i := 0; i < N; i++ {
 		go func(i int) {

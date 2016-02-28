@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -35,9 +36,11 @@ type Service struct {
 	client *http.Client
 
 	// set of command/notification listeners
-	commandListeners      map[string]*dh.CommandListener
-	notificationListeners map[string]*dh.NotificationListener
-	PollRetryTimeout      time.Duration
+	commandListenerLock      sync.Mutex
+	commandListeners         map[string]*dh.CommandListener
+	notificationListenerLock sync.Mutex
+	notificationListeners    map[string]*dh.NotificationListener
+	PollRetryTimeout         time.Duration
 
 	stopped uint32
 	stop    chan interface{}
@@ -99,16 +102,22 @@ func (service *Service) Stop() {
 		close(service.stop)
 
 		// clear all command listeners
-		for ID, listener := range service.commandListeners {
-			delete(service.commandListeners, ID)
-			close(listener.C)
-		}
+		func() {
+			service.commandListenerLock.Lock()
+			defer service.commandListenerLock.Unlock()
+			for ID := range service.commandListeners {
+				service.removeCommandListenerUnsafe(ID)
+			}
+		}()
 
 		// clear all notification listeners
-		for ID, listener := range service.notificationListeners {
-			delete(service.notificationListeners, ID)
-			close(listener.C)
-		}
+		func() {
+			service.notificationListenerLock.Lock()
+			defer service.notificationListenerLock.Unlock()
+			for ID := range service.notificationListeners {
+				service.removeNotificationListenerUnsafe(ID)
+			}
+		}()
 	}
 }
 
@@ -137,8 +146,72 @@ func (service *Service) prepareAuthorization(request *http.Request, device *dh.D
 	}
 }
 
+// find command listener
+func (service *Service) findCommandListener(deviceID string) *dh.CommandListener {
+	service.commandListenerLock.Lock()
+	defer service.commandListenerLock.Unlock()
+	if listener, ok := service.commandListeners[deviceID]; ok {
+		return listener
+	}
+	return nil // not found
+}
+
+// insert new command listener
+func (service *Service) insertCommandListener(deviceID string, listener *dh.CommandListener) {
+	service.commandListenerLock.Lock()
+	defer service.commandListenerLock.Unlock()
+	service.commandListeners[deviceID] = listener
+}
+
+// remove command listener
+func (service *Service) removeCommandListener(deviceID string) {
+	service.commandListenerLock.Lock()
+	defer service.commandListenerLock.Unlock()
+	service.removeCommandListenerUnsafe(deviceID)
+}
+
+// remove command listener (without mutex lock)
+func (service *Service) removeCommandListenerUnsafe(deviceID string) {
+	if listener, ok := service.commandListeners[deviceID]; ok {
+		delete(service.commandListeners, deviceID)
+		close(listener.C)
+	}
+}
+
+// find notification listener
+func (service *Service) findNotificationListener(deviceID string) *dh.NotificationListener {
+	service.notificationListenerLock.Lock()
+	defer service.notificationListenerLock.Unlock()
+	if listener, ok := service.notificationListeners[deviceID]; ok {
+		return listener
+	}
+	return nil // not found
+}
+
+// insert new notification listener
+func (service *Service) insertNotificationListener(deviceID string, listener *dh.NotificationListener) {
+	service.notificationListenerLock.Lock()
+	defer service.notificationListenerLock.Unlock()
+	service.notificationListeners[deviceID] = listener
+}
+
+// remove notification listener
+func (service *Service) removeNotificationListener(deviceID string) {
+	service.notificationListenerLock.Lock()
+	defer service.notificationListenerLock.Unlock()
+	service.removeNotificationListenerUnsafe(deviceID)
+}
+
+// remove notification listener (without mutex lock)
+func (service *Service) removeNotificationListenerUnsafe(deviceID string) {
+	if listener, ok := service.notificationListeners[deviceID]; ok {
+		delete(service.notificationListeners, deviceID)
+		close(listener.C)
+	}
+}
+
 // log returns task related log entry.
-func (task *asyncTask) log() *logrus.Entry {
+func (task *Task) log() *logrus.Entry {
 	return log.WithField("task", task.identifier)
 }
 

@@ -17,8 +17,8 @@ var (
 	taskID = uint64(0) // unique identifier generator
 )
 
-// Asynchronous request/task.
-type asyncTask struct {
+// Task is an asynchronous request/task.
+type Task struct {
 	identifier uint64
 	timeout    time.Duration
 	deviceAuth *dh.Device // is used for device authentication
@@ -31,8 +31,8 @@ type asyncTask struct {
 
 // create new async task.
 // assigns new unique identifier
-func newTask(method string, URL *url.URL, timeout time.Duration) *asyncTask {
-	task := new(asyncTask)
+func newTask(method string, URL *url.URL, timeout time.Duration) *Task {
+	task := new(Task)
 	task.identifier = atomic.AddUint64(&taskID, 1)
 	task.timeout = timeout
 	task.method = method
@@ -41,7 +41,7 @@ func newTask(method string, URL *url.URL, timeout time.Duration) *asyncTask {
 }
 
 // Do a request/task synchronously.
-func (service *Service) doSync(task *asyncTask) error {
+func (service *Service) doSync(task *Task) error {
 	task.log().WithField("url", task.request.URL).
 		Debugf("[%s]: sending %s request", TAG, task.request.Method)
 
@@ -56,7 +56,7 @@ func (service *Service) doSync(task *asyncTask) error {
 }
 
 // Do a request/task asynchronously.
-func (service *Service) doAsync(task *asyncTask) <-chan error {
+func (service *Service) doAsync(task *Task) <-chan error {
 	ch := make(chan error, 1)
 
 	go func() {
@@ -67,17 +67,17 @@ func (service *Service) doAsync(task *asyncTask) <-chan error {
 }
 
 // send request and parse response (expectes 200 status code)
-func (service *Service) do200(task *asyncTask, OP string, body interface{}, result interface{}) error {
+func (service *Service) do200(task *Task, OP string, body interface{}, result interface{}) error {
 	return service.do(task, OP, body, result, func(status int) bool { return status == http.StatusOK })
 }
 
 // send request and parse response (expectes 200..206 status code)
-func (service *Service) do2xx(task *asyncTask, OP string, body interface{}, result interface{}) error {
+func (service *Service) do2xx(task *Task, OP string, body interface{}, result interface{}) error {
 	return service.do(task, OP, body, result, func(status int) bool { return status >= http.StatusOK && status <= 299 })
 }
 
 // send request and parse response
-func (service *Service) do(task *asyncTask, OP string, body interface{}, result interface{},
+func (service *Service) do(task *Task, OP string, body interface{}, result interface{},
 	checkStatus func(status int) bool) (err error) {
 	// do nothing if service is stopped
 	if service.isStopped() {
