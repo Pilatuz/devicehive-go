@@ -9,7 +9,7 @@ import (
 
 // Test GetNetworkList and GetNetwork methods
 func TestNetworkListAndGet(t *testing.T) {
-	service := testNewRest(t)
+	service := testNewREST(t)
 	if service == nil {
 		return // nothing to test
 	}
@@ -35,7 +35,7 @@ func TestNetworkListAndGet(t *testing.T) {
 func TestNetworkUpdate(t *testing.T) {
 	return // IGNORED, DOESN'T WORK with playground
 
-	service := testNewRest(t)
+	service := testNewREST(t)
 	if service == nil {
 		return // nothing to test
 	}
@@ -56,7 +56,7 @@ func TestNetworkUpdate(t *testing.T) {
 func TestNetworkInsertAndDelete(t *testing.T) {
 	return // IGNORED, DOESN'T WORK with playground
 
-	service := testNewRest(t)
+	service := testNewREST(t)
 	if service == nil {
 		return // nothing to test
 	}

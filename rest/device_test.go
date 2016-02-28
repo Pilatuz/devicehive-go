@@ -9,7 +9,7 @@ import (
 
 // Test GetDeviceList and GetDevice methods
 func TestDeviceListAndGet(t *testing.T) {
-	service := testNewRest(t)
+	service := testNewREST(t)
 	if service == nil {
 		return // nothing to test
 	}
@@ -33,7 +33,7 @@ func TestDeviceListAndGet(t *testing.T) {
 
 // Test RegisterDevice and DeleteDevice methods
 func TestDeviceRegisterAndDelete(t *testing.T) {
-	service := testNewRest(t)
+	service := testNewREST(t)
 	if service == nil {
 		return // nothing to test
 	}

@@ -46,5 +46,5 @@ func (info ServerInfo) String() string {
 // FromMap assigns fields from map.
 // This method is used to assign already parsed JSON data.
 func (info *ServerInfo) FromMap(data interface{}) error {
-	return fromJSON(info, data)
+	return FromJSON(info, data)
 }

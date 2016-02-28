@@ -11,7 +11,7 @@ const (
 
 // Assign fields from JSON map.
 // This method is used to assign already parsed JSON data.
-func fromJSON(result interface{}, data interface{}) error {
+func FromJSON(result interface{}, data interface{}) error {
 	config := new(mapstructure.DecoderConfig)
 	config.WeaklyTypedInput = true
 	config.Result = result

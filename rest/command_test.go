@@ -9,7 +9,7 @@ import (
 
 // Test InsertCommand and GetCommand and UpdateCommand methods
 func TestCommandInsertAndUpdate(t *testing.T) {
-	service := testNewRest(t)
+	service := testNewREST(t)
 	if service == nil {
 		return // nothing to test
 	}
@@ -43,7 +43,7 @@ func TestCommandInsertAndUpdate(t *testing.T) {
 
 // Test InsertCommand and PollCommand methods
 func TestCommandInsertAndPoll(t *testing.T) {
-	service := testNewRest(t)
+	service := testNewREST(t)
 	if service == nil {
 		return // nothing to test
 	}
@@ -83,7 +83,7 @@ func TestCommandInsertAndPoll(t *testing.T) {
 
 // Test InsertCommand and SubscribeCommands methods
 func TestCommandInsertAndSubscribe(t *testing.T) {
-	service := testNewRest(t)
+	service := testNewREST(t)
 	if service == nil {
 		return // nothing to test
 	}

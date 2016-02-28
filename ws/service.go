@@ -2,24 +2,58 @@ package ws
 
 import (
 	"encoding/json"
-	"github.com/devicehive/devicehive-go/devicehive/core"
-	"github.com/devicehive/devicehive-go/devicehive/log"
-	"github.com/gorilla/websocket"
-
 	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/gorilla/websocket"
+	dh "github.com/pilatuz/go-devicehive"
 )
 
-// TODO: support /client websocket endpoint
+var (
+	// package logger instance
+	log = logrus.New()
+
+	// TAG is a log prefix
+	TAG = "DH-WS"
+
+	// indicates stop
+	errorStopped = fmt.Errorf("stopped")
+)
+
+// Action is a structure to hold some common action fields.
+type Action struct {
+	RequestID uint32 `json:"requestId,omitempty"`
+	Action    string `json:"action,omitempty"`
+
+	// command/insert
+	DeviceID string `json:"deviceGuid,omitempty"`
+
+	// status + error
+	Status string `json:"status,omitempty"`
+	Code   string `json:"code,omitempty"`
+	ErrMsg string `json:"error,omitempty"`
+}
+
+// Error checks if action contains error
+func (action *Action) Error() error {
+	if !strings.EqualFold(action.Status, "success") {
+		return fmt.Errorf("unexpected status: %q [%s %s]",
+			action.Status, action.Code, action.ErrMsg)
+	}
+
+	return nil // OK
+}
 
 // Websocket service representation.
 type Service struct {
 	// Base URL.
-	baseUrl *url.URL
+	baseURL *url.URL
 
 	// Access key, might be empty - means no access key authorizathion used.
 	accessKey string
@@ -29,128 +63,233 @@ type Service struct {
 
 	// active task set
 	taskLock   sync.Mutex
-	lastTaskId uint64
-	tasks      map[uint64]*Task
+	lastTaskId uint32
+	tasks      map[uint32]*Task
 
 	// command listeners
 	commandListenerLock sync.Mutex
-	commandListeners    map[string]*core.CommandListener
+	commandListeners    map[string]*dh.CommandListener
+
+	// notification listeners
+	notificationListenerLock sync.Mutex
+	notificationListeners    map[string]*dh.NotificationListener
 
 	// transmitter
 	tx chan *Task
+
+	stopped uint32
+	stop    chan interface{}
+	wg      sync.WaitGroup
+
+	// default operation timeout
+	DefaultTimeout time.Duration
 }
 
 // Get string representation of a Websocket service.
-func (s *Service) String() string {
-	return fmt.Sprintf("WebsocketService{baseUrl:%q, accessKey:%q}", s.baseUrl, s.accessKey)
-}
-
-func (service *Service) GetCommand(device *core.Device, commandId uint64, timeout time.Duration) (command *core.Command, err error) {
-	return &core.Command{}, nil
-}
-
-func (service *Service) InsertCommand(device *core.Device, command *core.Command, timeout time.Duration) (err error) {
-	return nil
-}
-
-func (service *Service) GetNotification(device *core.Device, notificationId uint64, timeout time.Duration) (notification *core.Notification, err error) {
-	return &core.Notification{}, nil
-}
-
-// find command listener
-func (service *Service) findCommandListener(deviceId string) *core.CommandListener {
-	service.commandListenerLock.Lock()
-	defer service.commandListenerLock.Unlock()
-	listener := service.commandListeners[deviceId]
-	return listener
-}
-
-// insert new command listener
-func (service *Service) insertCommandListener(deviceId string, listener *core.CommandListener) {
-	service.commandListenerLock.Lock()
-	defer service.commandListenerLock.Unlock()
-	service.commandListeners[deviceId] = listener
-}
-
-// remove command listener
-func (service *Service) removeCommandListener(deviceId string) {
-	service.commandListenerLock.Lock()
-	defer service.commandListenerLock.Unlock()
-	delete(service.commandListeners, deviceId)
+func (service *Service) String() string {
+	return fmt.Sprintf("WebsocketService{url:%q}", service.baseURL)
 }
 
 // NewService creates new Websocket /device service.
-func NewService(baseUrl, accessKey string) (service *Service, err error) {
-	log.Tracef("WS: creating service (url:%q)", baseUrl)
-	service = &Service{accessKey: accessKey}
+func NewService(baseUrl, accessKey string) (*Service, error) {
+	log.WithField("url", baseUrl).Debugf("[%s]: creating service", TAG)
+
+	var err error
+	service := new(Service)
+	service.accessKey = accessKey
 
 	// remove trailing slashes from URL
 	for len(baseUrl) > 1 && strings.HasSuffix(baseUrl, "/") {
-		baseUrl = baseUrl[0 : len(baseUrl)-1]
+		baseUrl = baseUrl[0 : len(baseUrl)-1] // strings.TrimSuffix(baseURL, "/")
 	}
 
 	// parse URL
-	service.baseUrl, err = url.Parse(baseUrl)
-	if err != nil {
-		log.Warnf("WS: failed to parse URL (error: %s)", err)
-		service = nil
-		return
+	if service.baseURL, err = url.Parse(baseUrl); err != nil {
+		log.WithError(err).Warnf("[%s]: failed to parse URL", TAG)
+		return nil, fmt.Errorf("failed to parse URL: %s", err)
 	}
 
 	// connect to /device endpoint
-	ws_url := fmt.Sprintf("%s/device", service.baseUrl)
+	service.baseURL.Path += "/device"
+	// TODO: /client endpoint
 	headers := http.Header{}
 	headers.Add("Origin", "http://localhost/")
 	if len(service.accessKey) != 0 {
 		headers.Add("Authorization", "Bearer "+service.accessKey)
 	}
-	service.conn, _, err = websocket.DefaultDialer.Dial(ws_url, headers)
+	service.conn, _, err = websocket.DefaultDialer.Dial(service.baseURL.String(), headers)
 	if err != nil {
-		log.Warnf("WS: failed to dial (error: %s)", err)
-		service = nil
-		return
+		log.WithError(err).Warnf("[%s]: failed to dial", TAG)
+		return nil, fmt.Errorf("failed to dial: %s", err)
 	}
 
 	// set of active tasks
-	service.tasks = make(map[uint64]*Task)
+	service.tasks = make(map[uint32]*Task)
 
-	// command listeners
-	service.commandListeners = make(map[string]*core.CommandListener)
+	// create empty set of listeners
+	service.notificationListeners = make(map[string]*dh.NotificationListener)
+	service.commandListeners = make(map[string]*dh.CommandListener)
+
+	// create stop channel
+	service.stop = make(chan interface{})
+
+	// default timeout
+	service.DefaultTimeout = 60 * time.Second
 
 	// create TX channel
-	service.tx = make(chan *Task)
+	service.tx = make(chan *Task, 64) // TODO: dedicated contant for buffer size
 
 	// and start RX/TX threads
+	service.wg.Add(2)
 	go service.doRX()
 	go service.doTX()
 
-	return
+	return service, nil // OK
+}
+
+// Stop stops all active requests and working goroutines
+func (service *Service) Stop() {
+	if atomic.CompareAndSwapUint32(&service.stopped, 0, 1) {
+		log.Debugf("[%s]: stopping service...", TAG)
+
+		// close channel
+		close(service.stop)
+
+		// clear all command listeners
+		func() {
+			service.commandListenerLock.Lock()
+			defer service.commandListenerLock.Unlock()
+			for ID := range service.commandListeners {
+				service.removeCommandListenerUnsafe(ID)
+			}
+		}()
+
+		// clear all notification listeners
+		func() {
+			service.notificationListenerLock.Lock()
+			defer service.notificationListenerLock.Unlock()
+			for ID := range service.notificationListeners {
+				service.removeNotificationListenerUnsafe(ID)
+			}
+		}()
+
+		// close connection
+		// TODO: send Close frame?
+		service.conn.Close()
+
+		log.Debugf("[%s]: waiting...", TAG)
+		service.wg.Wait()
+		log.Debugf("[%s]: service stopped", TAG)
+	}
+}
+
+// SetTimeout sets the default timeout
+func (service *Service) SetTimeout(timeout time.Duration) {
+	log.WithField("timeout", timeout).Infof("[%s]: default timeout changed", TAG)
+	service.DefaultTimeout = timeout
+}
+
+// check is the service stopped?
+func (service *Service) isStopped() bool {
+	return atomic.LoadUint32(&service.stopped) > 0
+}
+
+// find command listener
+func (service *Service) findCommandListener(deviceID string) *dh.CommandListener {
+	service.commandListenerLock.Lock()
+	defer service.commandListenerLock.Unlock()
+	if listener, ok := service.commandListeners[deviceID]; ok {
+		return listener
+	}
+	return nil // not found
+}
+
+// insert new command listener
+func (service *Service) insertCommandListener(deviceID string, listener *dh.CommandListener) {
+	service.commandListenerLock.Lock()
+	defer service.commandListenerLock.Unlock()
+	service.commandListeners[deviceID] = listener
+}
+
+// remove command listener
+func (service *Service) removeCommandListener(deviceID string) {
+	service.commandListenerLock.Lock()
+	defer service.commandListenerLock.Unlock()
+	service.removeCommandListenerUnsafe(deviceID)
+}
+
+// remove command listener (without mutex lock)
+func (service *Service) removeCommandListenerUnsafe(deviceID string) {
+	if listener, ok := service.commandListeners[deviceID]; ok {
+		delete(service.commandListeners, deviceID)
+		close(listener.C)
+	}
+}
+
+// find notification listener
+func (service *Service) findNotificationListener(deviceID string) *dh.NotificationListener {
+	service.notificationListenerLock.Lock()
+	defer service.notificationListenerLock.Unlock()
+	if listener, ok := service.notificationListeners[deviceID]; ok {
+		return listener
+	}
+	return nil // not found
+}
+
+// insert new notification listener
+func (service *Service) insertNotificationListener(deviceID string, listener *dh.NotificationListener) {
+	service.notificationListenerLock.Lock()
+	defer service.notificationListenerLock.Unlock()
+	service.notificationListeners[deviceID] = listener
+}
+
+// remove notification listener
+func (service *Service) removeNotificationListener(deviceID string) {
+	service.notificationListenerLock.Lock()
+	defer service.notificationListenerLock.Unlock()
+	service.removeNotificationListenerUnsafe(deviceID)
+}
+
+// remove notification listener (without mutex lock)
+func (service *Service) removeNotificationListenerUnsafe(deviceID string) {
+	if listener, ok := service.notificationListeners[deviceID]; ok {
+		delete(service.notificationListeners, deviceID)
+		close(listener.C)
+	}
 }
 
 // TX thread
 func (service *Service) doTX() {
+	defer func() {
+		log.Debugf("[%s]: TX thread stopped", TAG)
+		service.wg.Done()
+	}()
+
 	for {
 		select {
-		case task, ok := <-service.tx:
-			if !ok || task == nil {
-				log.Infof("WS: TX thread stopped")
-				service.conn.Close() // TODO: send Close frame?
-				return
-			}
+		case <-service.stop:
+			return
 
-			body, err := task.Format()
+		case task := <-service.tx:
+			task.log().WithField("msg", task.dataToSend).Debugf("[%s]: sending message", TAG)
+			body, err := json.Marshal(task.dataToSend)
 			if err != nil {
-				log.Warnf("WS: failed to format message (error: %s)", err)
-				continue // TODO: return?
+				task.log().WithError(err).Warnf("[%s]: failed to format message", TAG)
+				service.takeTask(task.identifier) // remove from "active" set
+				task.ReportDone(nil, fmt.Errorf("failed to format message: %s", err))
+				continue
 			}
 
-			log.Tracef("WS: sending message: %s", string(body))
+			// task.log().WithField("msg", string(body)).Debugf("[%s]: sending message", TAG)
 			err = service.conn.WriteMessage(websocket.TextMessage, body)
 			if err != nil {
-				log.Warnf("WS: failed to send message (error: %s)", err)
-				continue // TODO: return?
+				task.log().WithError(err).Warnf("[%s]: failed to send message", TAG)
+				service.takeTask(task.identifier) // remove from "active" set
+				task.ReportDone(nil, fmt.Errorf("failed to send message: %s", err))
+				continue
 			}
 
+			// TODO: ping/pong messages
 			//			case <-service.pingTimer.C:
 			//			if err := c.write(websocket.PingMessage, []byte{}); err != nil {
 			//				log.Warnf("WS: could not write ping message (error: %s)", err)
@@ -162,99 +301,103 @@ func (service *Service) doTX() {
 
 // RX thread
 func (service *Service) doRX() {
+	defer func() {
+		log.Debugf("[%s]: RX thread stopped", TAG)
+		service.wg.Done()
+	}()
+
+	rx_chan := make(chan []byte, 16)
+	var rx_err error
+
+	// receive message in dedicated goroutine
+	service.wg.Add(1)
+	go func() {
+		defer func() {
+			log.Debugf("[%s]: *RX thread stopped", TAG)
+			service.wg.Done()
+		}()
+
+		for {
+			// read a message...
+			_, body, err := service.conn.ReadMessage()
+			if err != nil {
+				rx_err = err
+				close(rx_chan)
+				return
+			}
+
+			// ...and pass it for processing
+			rx_chan <- body
+		}
+	}()
+
 	for {
-		_, body, err := service.conn.ReadMessage()
-		if err != nil {
-			log.Warnf("WS: failed to receive message (error: %s)", err)
+		select {
+		case <-service.stop:
 			return
-		}
-		log.Tracef("WS: received message: %s", string(body))
 
-		// parse JSON
-		var msg map[string]interface{}
-		err = json.Unmarshal(body, &msg)
-		if err != nil {
-			log.Warnf("WS: failed to parse JSON (error: %s), ignored", err)
-			continue
-		}
+		case msg_body := <-rx_chan:
+			if rx_err != nil {
+				log.WithError(rx_err).Warnf("[%s]: failed to receive message", TAG)
+				return // stop processing
+			}
 
-		// log.Tracef("WS: parsed JSON %+v", msg)
-		if v, ok := msg["requestId"]; ok {
-			id := safeUint64(v)
-			task := service.takeTask(id)
-			if task != nil {
-				task.dataRecved = msg
-				task.done <- task
+			// parse JSON to the map
+			var msg map[string]interface{}
+			err := json.Unmarshal(msg_body, &msg)
+			if err != nil {
+				log.WithField("msg", string(msg_body)).Debugf("[%s]: new message received", TAG)
+				log.WithError(err).Warnf("[%s]: failed to parse JSON, ignored", TAG)
 				continue
 			}
-		}
 
-		if v, ok := msg["action"]; ok {
-			action := safeString(v)
-			service.handleAction(action, msg)
-			continue
+			log.WithField("msg", msg).Debugf("[%s]: new message received", TAG)
+			service.handleMessage(msg)
 		}
-
-		log.Warnf("WS: unexpected message: %s, ignored", string(body))
 	}
 }
 
-// handle asynchronous actions
-func (service *Service) handleAction(action string, data map[string]interface{}) {
-	switch action {
+// handle received messages
+func (service *Service) handleMessage(data map[string]interface{}) {
+	// decode common fields
+	msg := new(Action)
+	if err := dh.FromJSON(msg, data); err != nil {
+		log.WithError(err).Warnf("[%s]: failed to assign JSON, ignored", TAG)
+		return
+	}
+
+	// handle pending requests first
+	if task := service.takeTask(msg.RequestID); task != nil {
+		task.ReportDone(data, msg.Error())
+		return
+	}
+
+	// asynchronous actions
+	switch msg.Action {
 	case "command/insert":
-		if v, ok := data["deviceGuid"]; ok {
-			deviceId := safeString(v)
-			listener := service.findCommandListener(deviceId)
-			if listener != nil {
-				command := &core.Command{}
-				err := command.AssignJSON(data["command"])
-				if err != nil {
-					log.Warnf("WS: failed to parse commnad/insert body (error: %s)", err)
-					return
-				}
-				listener.C <- command
-			} else {
-				log.Warnf("WS: no command listener installed, %v ignored", data)
+		if listener := service.findCommandListener(msg.DeviceID); listener != nil {
+			command := new(dh.Command)
+			err := command.FromMap(data["command"])
+			if err != nil {
+				log.WithError(err).Warnf("[%s]: failed to parse %q body, ignored", TAG, msg.Action)
+				return
 			}
+			listener.C <- command
 		} else {
-			log.Warnf("WS: no deviceId provided for command/insert, %v ignored", data)
+			log.WithField("deviceId", msg.DeviceID).Warnf("[%s]: no command listener installed, ignored", TAG)
 		}
 	default:
-		log.Warnf("WS: unexpected action received: %v, ignored", data)
+		log.WithField("action", msg.Action).Warnf("[%s]: unknown action received, ignored", TAG)
 	}
 }
 
-// get uint64
-func safeUint64(v interface{}) uint64 {
-	switch x := v.(type) {
-	case float64:
-		return uint64(x)
-
-	case uint64:
-		return x
-
-	// TODO: add other types
-
-	default:
-		log.Warnf("WS: unable to convert %v to uint64", v)
-		return 0
-	}
+// log returns task related log entry.
+func (task *Task) log() *logrus.Entry {
+	return log.WithField("task", task.identifier)
 }
 
-// get string
-func safeString(v interface{}) string {
-	switch x := v.(type) {
-	case string:
-		return x
-
-	case float64:
-		return fmt.Sprintf("%g", x)
-
-	// TODO: add other types
-
-	default:
-		log.Warnf("WS: unable to convert %v to string", v)
-		return ""
-	}
+// SetLogLevel changes the package log level.
+func SetLogLevel(level string) (err error) {
+	log.Level, err = logrus.ParseLevel(level)
+	return
 }

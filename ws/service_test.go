@@ -1,4 +1,4 @@
-package rest
+package ws
 
 import (
 	"encoding/json"
@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	dh "github.com/pilatuz/go-devicehive"
+	// dh "github.com/pilatuz/go-devicehive"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	testServerURL   = "http://playground.devicehive.com/api/rest/"
+	testServerURL   = "ws://playground.devicehive.com/api/websocket/"
 	testAccessKey   = ""
 	testWaitTimeout = 60 * time.Second
 	testLogLevel    = "debug"
@@ -20,7 +20,7 @@ var (
 
 // initialize test environment
 func init() {
-	flag.StringVar(&testServerURL, "url", testServerURL, "REST service URL")
+	flag.StringVar(&testServerURL, "url", testServerURL, "WS service URL")
 	flag.StringVar(&testAccessKey, "access-key", testAccessKey, "key to access playground")
 	flag.StringVar(&testLogLevel, "log-level", testLogLevel, "logging level")
 	flag.Parse()
@@ -28,8 +28,8 @@ func init() {
 	SetLogLevel(testLogLevel)
 }
 
-// creates new REST service
-func testNewREST(t *testing.T) *Service {
+// creates new WS service
+func testNewWS(t *testing.T) *Service {
 	if len(testServerURL) == 0 {
 		return nil
 	}
@@ -40,7 +40,7 @@ func testNewREST(t *testing.T) *Service {
 		service.SetTimeout(testWaitTimeout)
 
 		// check DeviceService is implemented
-		_ = dh.DeviceService(service)
+		// TODO: _ = dh.DeviceService(service)
 	}
 
 	return service
@@ -63,12 +63,8 @@ func TestServiceBadAddress(t *testing.T) {
 	}
 
 	service, err := NewService(strings.Replace(testServerURL, ".", "_", -1), "")
-	assert.NoError(t, err, "Failed to create service")
-	if assert.NotNil(t, service, "No service created") {
-		info, err := service.GetServerInfo()
-		assert.Error(t, err, `No "unknown host" expected error`)
-		assert.Nil(t, info, "No service info expected")
-	}
+	assert.Error(t, err, `No "unknown host" expected error`)
+	assert.Nil(t, service, "No service expected")
 }
 
 // Test GetServerInfo method (invalid path)
@@ -77,24 +73,20 @@ func TestServiceBadPath(t *testing.T) {
 		return // nothing to test
 	}
 
-	service, err := NewService(strings.Replace(testServerURL, "rest", "reZZZt", -1), "")
-	assert.NoError(t, err, "Failed to create service")
-	if assert.NotNil(t, service, "No service created") {
-		info, err := service.GetServerInfo()
-		assert.Error(t, err, `No "invalid path" expected error`)
-		assert.Nil(t, info, "No service info expected")
-	}
+	service, err := NewService(strings.Replace(testServerURL, "websocket", "webZZZocket", -1), "")
+	assert.Error(t, err, `No "invalid path" expected error`)
+	assert.Nil(t, service, "No service expected")
 }
 
 // Test service.Stop method
 func TestServiceStop(t *testing.T) {
-	service := testNewREST(t)
+	service := testNewWS(t)
 	if service == nil {
 		return // nothing to test
 	}
 
 	N := 5 // requests at the same time
-	ch := make(chan int, N+1)
+	ch := make(chan int, N)
 
 	go func() {
 		time.Sleep(100 * time.Millisecond)

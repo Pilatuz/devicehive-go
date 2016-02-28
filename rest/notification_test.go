@@ -9,7 +9,7 @@ import (
 
 // Test InsertNotification and GetNotification methods
 func TestNotificationInsertAndGet(t *testing.T) {
-	service := testNewRest(t)
+	service := testNewREST(t)
 	if service == nil {
 		return // nothing to test
 	}
@@ -34,7 +34,7 @@ func TestNotificationInsertAndGet(t *testing.T) {
 
 // Test InsertNotification and PollNotification methods
 func TestNotificationInsertAndPoll(t *testing.T) {
-	service := testNewRest(t)
+	service := testNewREST(t)
 	if service == nil {
 		return // nothing to test
 	}
@@ -74,7 +74,7 @@ func TestNotificationInsertAndPoll(t *testing.T) {
 
 // Test InsertNotification and SubscribeNotifications methods
 func TestNotificationInsertAndSubscribe(t *testing.T) {
-	service := testNewRest(t)
+	service := testNewREST(t)
 	if service == nil {
 		return // nothing to test
 	}

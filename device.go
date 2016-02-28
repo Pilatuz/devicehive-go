@@ -96,5 +96,5 @@ func (device Device) String() string {
 // FromMap assigns fields from map.
 // This method is used to assign already parsed JSON data.
 func (device *Device) FromMap(data interface{}) error {
-	return fromJSON(device, data)
+	return FromJSON(device, data)
 }

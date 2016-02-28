@@ -1,74 +1,95 @@
 package ws
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/devicehive/devicehive-go/devicehive/core"
-	"strings"
+	"time"
+
+	dh "github.com/pilatuz/go-devicehive"
 )
 
+// Task is one request/response pair.
 type Task struct {
-	id         uint64
-	dataToSend map[string]interface{}
-	dataRecved map[string]interface{}
-	done       chan *Task
+	identifier   uint32
+	dataToSend   map[string]interface{}
+	dataReceived map[string]interface{}
+	doneCh       chan error
+	timeout      time.Duration
 }
 
 // prepare device-key authorization
-func (task *Task) prepareAuthorization(device *core.Device) {
-	if device != nil {
-		// DeviceId [optional]
-		if len(device.Id) != 0 {
-			task.dataToSend["deviceId"] = device.Id
-		}
+func (task *Task) prepareAuthorization(device *dh.Device) {
+	if device == nil {
+		return // do nothing
+	}
 
-		// DeviceKey [optional]
-		if len(device.Key) != 0 {
-			task.dataToSend["deviceKey"] = device.Key
-		}
+	// optional fields
+	if len(device.ID) != 0 || len(device.Key) != 0 {
+		task.dataToSend["deviceId"] = device.ID
+		task.dataToSend["deviceKey"] = device.Key
 	}
 }
 
-// Format the JSON data
-func (task *Task) Format() (body []byte, err error) {
-	body, err = json.Marshal(task.dataToSend)
-	return
-}
-
-// Check "success" status
-func (task *Task) CheckStatus() (err error) {
-	status := safeString(task.dataRecved["status"])
-	if !strings.EqualFold(status, "success") {
-		err = fmt.Errorf("unexpected status: %q [%s %s]", status,
-			safeString(task.dataRecved["code"]),
-			safeString(task.dataRecved["error"]))
-	}
-	return
+// ReportDone reports task is done
+func (task *Task) ReportDone(data map[string]interface{}, err error) {
+	task.dataReceived = data
+	task.doneCh <- err
 }
 
 // create new empty task and put to active set
-func (service *Service) newTask() (task *Task) {
-	task = new(Task)
-	task.done = make(chan *Task)
+func (service *Service) newTask(timeout time.Duration) *Task {
+	task := new(Task)
+	task.timeout = timeout
+	task.doneCh = make(chan error, 1)
 
 	service.taskLock.Lock()
 	defer service.taskLock.Unlock()
 	service.lastTaskId += 1 // generate unique identifier
-	task.id = service.lastTaskId
-	service.tasks[task.id] = task // put to "active" set
+	if service.lastTaskId == 0 {
+		// avoid zero identifier
+		service.lastTaskId += 1
+	}
+	task.identifier = service.lastTaskId
+	service.tasks[task.identifier] = task // put to "active" set
 
-	//log.Tracef("WS: new task #%d created", task.id)
-	return
+	// task.log().Debugf("[%s]: new task created", TAG)
+	return task
 }
 
 // find task and remove it from active list
 // return nil if not found
-func (service *Service) takeTask(id uint64) (task *Task) {
+func (service *Service) takeTask(id uint32) *Task {
 	service.taskLock.Lock()
 	defer service.taskLock.Unlock()
 
-	task = service.tasks[id]
-	delete(service.tasks, id)
+	if task, ok := service.tasks[id]; ok {
+		delete(service.tasks, id)
+		return task
+	}
 
-	return
+	return nil // not found
+}
+
+// send request and parse response
+func (service *Service) do(task *Task, OP string) (err error) {
+	// add to the TX pipeline
+	service.tx <- task
+
+	select {
+	case <-time.After(task.timeout):
+		// TODO: task.request.Cancel // cancel request
+		task.log().WithField("timeout", task.timeout).Warnf("[%s]: failed to wait %s response: timed out", TAG, OP)
+		return fmt.Errorf("failed to wait %s response: timed out (%s)", OP, task.timeout)
+
+	case <-service.stop:
+		task.log().Warnf("[%s]: %s stopped", TAG, OP)
+		return errorStopped
+
+	case err := <-task.doneCh:
+		if err != nil {
+			task.log().WithError(err).Warnf("[%s]: failed to get %s response", TAG, OP)
+			return fmt.Errorf("failed to get %s response: %s", OP, err)
+		}
+	}
+
+	return nil // OK
 }

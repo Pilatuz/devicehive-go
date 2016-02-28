@@ -57,5 +57,5 @@ func (network Network) String() string {
 // FromMap assigns fields from map.
 // This method is used to assign already parsed JSON data.
 func (network *Network) FromMap(data interface{}) error {
-	return fromJSON(network, data)
+	return FromJSON(network, data)
 }

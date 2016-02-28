@@ -118,5 +118,5 @@ func (command Command) String() string {
 // FromMap assigns fields from map.
 // This method is used to assign already parsed JSON data.
 func (command *Command) FromMap(data interface{}) error {
-	return fromJSON(command, data)
+	return FromJSON(command, data)
 }

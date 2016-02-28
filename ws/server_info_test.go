@@ -1,4 +1,4 @@
-package rest
+package ws
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 
 // Test GetServerInfo method
 func TestServerInfo(t *testing.T) {
-	service := testNewREST(t)
+	service := testNewWS(t)
 	if service == nil {
 		return // nothing to test
 	}
@@ -19,7 +19,7 @@ func TestServerInfo(t *testing.T) {
 	if assert.NotNil(t, info, "No service info available") {
 		assert.NotEmpty(t, info.Version, "No API version")
 		assert.NotEmpty(t, info.Timestamp, "No server timestamp")
-		// websocket URL might be empty
-		// t.Logf("server info: %s", info)
+		// REST URL might be empty
+		t.Logf("server info: %s", info)
 	}
 }
