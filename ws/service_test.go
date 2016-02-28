@@ -78,7 +78,7 @@ func testNewWsDevice(t *testing.T) *Service {
 		service.SetTimeout(testWaitTimeout)
 
 		// check DeviceService is implemented
-		// TODO: _ = dh.DeviceService(service)
+		_ = dh.DeviceService(service)
 	}
 
 	return service
@@ -96,7 +96,7 @@ func testNewWsClient(t *testing.T) *Service {
 		service.SetTimeout(testWaitTimeout)
 
 		// check ClientService is implemented
-		// TODO: _ = dh.ClientService(service)
+		_ = dh.ClientService(service)
 	}
 
 	return service

@@ -79,6 +79,9 @@ func testNewREST(t *testing.T) *Service {
 
 		// check DeviceService is implemented
 		_ = dh.DeviceService(service)
+
+		// check ClientService is implemented
+		_ = dh.ClientService(service)
 	}
 
 	return service
