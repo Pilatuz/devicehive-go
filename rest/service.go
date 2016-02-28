@@ -44,6 +44,7 @@ type Service struct {
 
 	stopped uint32
 	stop    chan interface{}
+	wg      sync.WaitGroup
 
 	// default operation timeout
 	DefaultTimeout time.Duration
@@ -96,7 +97,7 @@ func NewService(baseURL, accessKey string) (*Service, error) {
 // Stop stops all active requests and polling loops
 func (service *Service) Stop() {
 	if atomic.CompareAndSwapUint32(&service.stopped, 0, 1) {
-		log.Infof("[%s]: stopping service", TAG)
+		log.Debugf("[%s]: stopping service...", TAG)
 
 		// close channel
 		close(service.stop)
@@ -118,6 +119,10 @@ func (service *Service) Stop() {
 				service.removeNotificationListenerUnsafe(ID)
 			}
 		}()
+
+		log.Debugf("[%s]: waiting...", TAG)
+		service.wg.Wait()
+		log.Debugf("[%s]: service stopped", TAG)
 	}
 }
 

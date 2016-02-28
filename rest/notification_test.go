@@ -13,6 +13,7 @@ func TestNotificationInsertAndGet(t *testing.T) {
 	if service == nil {
 		return // nothing to test
 	}
+	defer service.Stop()
 
 	devices, err := service.GetDeviceList(0, 0)
 	assert.NoError(t, err, "Failed to get list of devices")
@@ -38,6 +39,7 @@ func TestNotificationInsertAndPoll(t *testing.T) {
 	if service == nil {
 		return // nothing to test
 	}
+	defer service.Stop()
 
 	info, err := service.GetServerInfo()
 	assert.NoError(t, err, "Failed to get server info")
@@ -78,6 +80,7 @@ func TestNotificationInsertAndSubscribe(t *testing.T) {
 	if service == nil {
 		return // nothing to test
 	}
+	defer service.Stop()
 
 	info, err := service.GetServerInfo()
 	assert.NoError(t, err, "Failed to get server info")

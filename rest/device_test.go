@@ -13,6 +13,7 @@ func TestDeviceListAndGet(t *testing.T) {
 	if service == nil {
 		return // nothing to test
 	}
+	defer service.Stop()
 
 	devices, err := service.GetDeviceList(0, 0)
 	assert.NoError(t, err, "Failed to get list of devices")
@@ -37,9 +38,10 @@ func TestDeviceRegisterAndDelete(t *testing.T) {
 	if service == nil {
 		return // nothing to test
 	}
+	defer service.Stop()
 
-	device := dh.NewDevice("go-unit-test-device", "go test device",
-		dh.NewDeviceClass("go-test-deviceclass", "0.0.1"))
+	device := dh.NewDevice("go-unit-test-device-rest", "go test device rest",
+		dh.NewDeviceClass("go-test-deviceclass-rest", "0.0.1"))
 	err := service.RegisterDevice(device)
 	if assert.NoError(t, err, "Failed to register device") {
 		t.Logf("device registered: %s", device)

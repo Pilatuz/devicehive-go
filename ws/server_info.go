@@ -16,15 +16,16 @@ func (service *Service) GetServerInfo() (*dh.ServerInfo, error) {
 		"requestId": task.identifier,
 	}
 
-	err := service.do(task, "/info")
+	err := service.do(task, OP)
 	if err != nil {
 		return nil, err
 	}
 
+	// parse response
 	info := new(dh.ServerInfo)
 	err = info.FromMap(task.dataReceived["info"])
 	if err != nil {
-		log.WithError(err).Warnf("[%s]: failed to parse %s response", TAG, OP)
+		task.log().WithError(err).Warnf("[%s]: failed to parse %s response", TAG, OP)
 		return nil, fmt.Errorf("failed to parse %s response: %s", OP, err)
 	}
 

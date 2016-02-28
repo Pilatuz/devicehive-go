@@ -9,11 +9,17 @@ import (
 
 // Task is one request/response pair.
 type Task struct {
-	identifier   uint32
+	// identifer is 32-bits wide because
+	// go uses float64 to store all JSON numbers
+	// so uint64 cannot be precisely stored!
+	// (float64 uses about 52 bits per mantissa)
+	identifier uint32
+
 	dataToSend   map[string]interface{}
 	dataReceived map[string]interface{}
-	doneCh       chan error
-	timeout      time.Duration
+
+	doneCh  chan error
+	timeout time.Duration
 }
 
 // prepare device-key authorization

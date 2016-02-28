@@ -13,6 +13,7 @@ func TestNetworkListAndGet(t *testing.T) {
 	if service == nil {
 		return // nothing to test
 	}
+	defer service.Stop()
 
 	networks, err := service.GetNetworkList(0, 0)
 	assert.NoError(t, err, "Failed to get list of networks")
@@ -39,6 +40,7 @@ func TestNetworkUpdate(t *testing.T) {
 	if service == nil {
 		return // nothing to test
 	}
+	defer service.Stop()
 
 	networks, err := service.GetNetworkList(0, 0)
 	assert.NoError(t, err, "Failed to get list of networks")
@@ -60,6 +62,7 @@ func TestNetworkInsertAndDelete(t *testing.T) {
 	if service == nil {
 		return // nothing to test
 	}
+	defer service.Stop()
 
 	network := dh.NewNetwork("test-net", "no-secure-key")
 	err := service.InsertNetwork(network)

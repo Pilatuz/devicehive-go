@@ -16,9 +16,13 @@ func (service *Service) SubscribeCommands(device *dh.Device, timestamp string) (
 	listener := dh.NewCommandListener(64) // TODO: dedicated variable for buffer size
 	service.insertCommandListener(device.ID, listener)
 
+	service.wg.Add(1)
 	go func(deviceID string, timestamp string) {
 		log.WithField("ID", deviceID).Debugf("[%s]: start command polling", TAG)
-		defer log.WithField("ID", deviceID).Debugf("[%s]: stop command polling", TAG)
+		defer func() {
+			log.WithField("ID", deviceID).Debugf("[%s]: stop command polling", TAG)
+			service.wg.Done()
+		}()
 
 		for {
 			const names = ""
@@ -74,9 +78,13 @@ func (service *Service) SubscribeNotifications(device *dh.Device, timestamp stri
 	listener := dh.NewNotificationListener(64) // TODO: dedicated variable for buffer size
 	service.insertNotificationListener(device.ID, listener)
 
+	service.wg.Add(1)
 	go func(deviceID string, timestamp string) {
 		log.WithField("ID", deviceID).Debugf("[%s]: start notification polling", TAG)
-		defer log.WithField("ID", deviceID).Debugf("[%s]: stop notification polling", TAG)
+		defer func() {
+			log.WithField("ID", deviceID).Debugf("[%s]: stop notification polling", TAG)
+			service.wg.Done()
+		}()
 
 		for {
 			const names = ""
