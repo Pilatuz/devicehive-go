@@ -3,7 +3,7 @@ package rest
 import (
 	"testing"
 
-	dh "github.com/pilatuz/go-devicehive"
+	//dh "github.com/pilatuz/go-devicehive"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,8 +40,11 @@ func TestDeviceRegisterAndDelete(t *testing.T) {
 	}
 	defer service.Stop()
 
-	device := dh.NewDevice("go-unit-test-device-rest", "go test device rest",
-		dh.NewDeviceClass("go-test-deviceclass-rest", "0.0.1"))
+	device := testNewDevice()
+	device.Network = testNewNetwork()
+	device.ID += "-rest"
+	device.Name += "-rest"
+
 	err := service.RegisterDevice(device)
 	if assert.NoError(t, err, "Failed to register device") {
 		t.Logf("device registered: %s", device)

@@ -15,12 +15,14 @@ func TestCommandInsertAndUpdate(t *testing.T) {
 	}
 	defer service.Stop()
 
-	devices, err := service.GetDeviceList(0, 0)
-	assert.NoError(t, err, "Failed to get list of devices")
-	assert.NotEmpty(t, devices, "No any device available")
+	device := testNewDevice()
+	device.Network = testNewNetwork()
+	device.ID += "-rest"
+	device.Name += "-rest"
 
-	for i, device := range devices {
-		t.Logf("device-%d: %s", i, device)
+	err := service.RegisterDevice(device)
+	if assert.NoError(t, err, "Failed to register device") {
+		i := 123 // t.Logf("device: %s", device)
 
 		command := dh.NewCommand("go-test-command", i)
 		err := service.InsertCommand(device, command)
@@ -54,14 +56,14 @@ func TestCommandInsertAndPoll(t *testing.T) {
 	assert.NoError(t, err, "Failed to get server info")
 	assert.NotEmpty(t, info.Timestamp, "No server timestamp avaialble")
 
-	devices, err := service.GetDeviceList(0, 0)
-	assert.NoError(t, err, "Failed to get list of devices")
-	assert.NotEmpty(t, devices, "No any device available")
+	device := testNewDevice()
+	device.Network = testNewNetwork()
+	device.ID += "-rest"
+	device.Name += "-rest"
 
-	// TODO: register and delete dedicated device!
-
-	for i, device := range devices {
-		t.Logf("device-%d: %s", i, device)
+	err = service.RegisterDevice(device)
+	if assert.NoError(t, err, "Failed to register device") {
+		i := 1234 // t.Logf("device: %s", device)
 
 		command := dh.NewCommand("go-test-command", i)
 		err := service.InsertCommand(device, command)
@@ -95,14 +97,14 @@ func TestCommandInsertAndSubscribe(t *testing.T) {
 	assert.NoError(t, err, "Failed to get server info")
 	assert.NotEmpty(t, info.Timestamp, "No server timestamp avaialble")
 
-	devices, err := service.GetDeviceList(0, 0)
-	assert.NoError(t, err, "Failed to get list of devices")
-	assert.NotEmpty(t, devices, "No any device available")
+	device := testNewDevice()
+	device.Network = testNewNetwork()
+	device.ID += "-rest"
+	device.Name += "-rest"
 
-	// TODO: register and delete dedicated device!
-
-	for i, device := range devices {
-		// t.Logf("device-%d: %s", i, device)
+	err = service.RegisterDevice(device)
+	if assert.NoError(t, err, "Failed to register device") {
+		i := 12345 // t.Logf("device: %s", device)
 
 		listener, err := service.SubscribeCommands(device, info.Timestamp)
 		assert.NoError(t, err, "Failed to subscribe commands")

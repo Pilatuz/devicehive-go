@@ -3,7 +3,7 @@ package rest
 import (
 	"testing"
 
-	dh "github.com/pilatuz/go-devicehive"
+	//dh "github.com/pilatuz/go-devicehive"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -64,7 +64,7 @@ func TestNetworkInsertAndDelete(t *testing.T) {
 	}
 	defer service.Stop()
 
-	network := dh.NewNetwork("test-net", "no-secure-key")
+	network := testNewNetwork()
 	err := service.InsertNetwork(network)
 	assert.NoError(t, err, "Failed to insert network")
 	assert.NotEmpty(t, network.ID, "No network identifier provided")

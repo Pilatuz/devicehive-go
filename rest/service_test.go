@@ -12,10 +12,18 @@ import (
 )
 
 var (
-	testServerURL   = "http://playground.devicehive.com/api/rest/"
-	testAccessKey   = ""
-	testWaitTimeout = 60 * time.Second
-	testLogLevel    = "debug"
+	testServerURL          = "http://playground.devicehive.com/api/rest/"
+	testAccessKey          = ""
+	testDeviceId           = "go-test-dev-id"
+	testDeviceName         = "go-test-dev-name"
+	testDeviceKey          = "go-test-dev-key"
+	testDeviceClassName    = "go-device-class"
+	testDeviceClassVersion = "1.2.3"
+	testNetworkName        = ""
+	testNetworkKey         = ""
+	testNetworkDesc        = ""
+	testWaitTimeout        = 60 * time.Second
+	testLogLevel           = "debug"
 )
 
 // initialize test environment
@@ -23,9 +31,39 @@ func init() {
 	flag.StringVar(&testServerURL, "url", testServerURL, "REST service URL")
 	flag.StringVar(&testAccessKey, "access-key", testAccessKey, "key to access playground")
 	flag.StringVar(&testLogLevel, "log-level", testLogLevel, "logging level")
+
+	flag.StringVar(&testDeviceId, "device-id", testDeviceId, "test Device identifier")
+	flag.StringVar(&testDeviceName, "device-name", testDeviceName, "test Device name")
+	flag.StringVar(&testDeviceKey, "device-key", testDeviceKey, "test Device key")
+
+	flag.StringVar(&testDeviceClassName, "device-class-name", testDeviceClassName, "test Device class name")
+	flag.StringVar(&testDeviceClassVersion, "device-class-version", testDeviceClassVersion, "test Device class version")
+
+	flag.StringVar(&testNetworkName, "network-name", testNetworkName, "test Network name")
+	flag.StringVar(&testNetworkKey, "network-key", testNetworkKey, "test Network key")
+	flag.StringVar(&testNetworkDesc, "network-desc", testNetworkDesc, "test Network description")
+
 	flag.Parse()
 
 	SetLogLevel(testLogLevel)
+}
+
+// creates new test Device with device class initialized
+func testNewDevice() *dh.Device {
+	dc := dh.NewDeviceClass(testDeviceClassName, testDeviceClassVersion)
+	device := dh.NewDevice(testDeviceId, testDeviceName, dc)
+	device.Key = testDeviceKey
+	return device
+}
+
+// creates new test Network
+func testNewNetwork() *dh.Network {
+	if len(testNetworkName) != 0 {
+		network := dh.NewNetwork(testNetworkName, testNetworkKey)
+		network.Description = testNetworkDesc
+		return network
+	}
+	return nil
 }
 
 // creates new REST service
