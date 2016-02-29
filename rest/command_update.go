@@ -3,7 +3,7 @@ package rest
 import (
 	"fmt"
 
-	dh "github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/devicehive-go"
 )
 
 // UpdateCommand updates the device command.

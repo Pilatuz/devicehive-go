@@ -1,7 +1,7 @@
 package ws
 
 import (
-	dh "github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/devicehive-go"
 )
 
 // UnsubscribeCommand removes the command listener

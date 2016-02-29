@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	dh "github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/devicehive-go"
 )
 
 var (

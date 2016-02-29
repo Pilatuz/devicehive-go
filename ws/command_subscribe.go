@@ -1,7 +1,7 @@
 package ws
 
 import (
-	dh "github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/devicehive-go"
 )
 
 // SubscribeCommand starts listening for the commands.

@@ -3,7 +3,7 @@ package ws
 import (
 	"fmt"
 
-	dh "github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/devicehive-go"
 )
 
 // InsertNotification() function inserts the notification.

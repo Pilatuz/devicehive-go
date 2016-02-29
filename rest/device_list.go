@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	dh "github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/devicehive-go"
 )
 
 // GetDeviceList get the device list.

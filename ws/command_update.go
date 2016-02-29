@@ -1,7 +1,7 @@
 package ws
 
 import (
-	dh "github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/devicehive-go"
 )
 
 // CommandUpdate updates the command result.

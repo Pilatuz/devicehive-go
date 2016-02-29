@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	dh "github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/devicehive-go"
 	"github.com/stretchr/testify/assert"
 )
 

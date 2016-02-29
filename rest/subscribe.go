@@ -3,7 +3,7 @@ package rest
 import (
 	"time"
 
-	dh "github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/devicehive-go"
 )
 
 // SubscribeCommands adds a new command listener

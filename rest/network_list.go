@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	dh "github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/devicehive-go"
 )
 
 // GetNetworkList gets the list of networks.

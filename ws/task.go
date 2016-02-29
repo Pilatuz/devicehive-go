@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	dh "github.com/pilatuz/go-devicehive"
+	dh "github.com/pilatuz/devicehive-go"
 )
 
 // Task is one request/response pair.
