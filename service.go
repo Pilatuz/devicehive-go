@@ -6,6 +6,8 @@ import (
 
 // DeviceService is an abstract DeviceHive /device API.
 type DeviceService interface {
+	Stop()
+
 	SetTimeout(timeout time.Duration)
 	GetServerInfo() (info *ServerInfo, err error)
 
@@ -23,6 +25,8 @@ type DeviceService interface {
 
 // ClientService is an abstract DeviceHive /client API.
 type ClientService interface {
+	Stop()
+
 	SetTimeout(timeout time.Duration)
 	GetServerInfo() (info *ServerInfo, err error)
 
